@@ -1,0 +1,18 @@
+{
+    "name": "EmberAI.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:6c15e14a5544d41539bef66d3a6a758c"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

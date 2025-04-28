@@ -1,0 +1,31 @@
+namespace EmberAI.Avatars
+{
+    public enum AvatarBoneID
+    {
+        Hips,
+        Spine,
+        Chest,
+        UpperChest,
+        Neck,
+        Head,
+        LeftShoulder,
+        LeftUpperArm,
+        LeftLowerArm,
+        LeftHand,
+        RightShoulder,
+        RightUpperArm,
+        RightLowerArm,
+        RightHand,
+        LeftUpperLeg,
+        LeftLowerLeg,
+        LeftFoot,
+        LeftToes,
+        RightUpperLeg,
+        RightLowerLeg,
+        RightFoot,
+        RightToes,
+        Jaw,
+        RightEye,
+        LeftEye
+    }
+}

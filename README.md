@@ -12,7 +12,7 @@ Include this package in any Unity project by adding the following to the package
 
 if you wish to target a particular tag/branch/commit, add the appropriate hash
 
-`"com.emberai": "https://github.com/vinnievivace/Ember.AI.git#develop"`
+`"com.emberai": "https://github.com/vinnievivace/Ember.AI.git#dev"`
 
 **NOTE:** Currently the custom package repository is private, so you need to setup GIT credential manager as described in Unity documentation
 

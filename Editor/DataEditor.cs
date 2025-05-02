@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using EmberAI.Attributes;
+using EmberAI.Core;
 using UnityEditor;
 using UnityEngine;
 
@@ -38,15 +39,15 @@ namespace EmberAI.Editor
 
             float headerHeight = 40f;
             Rect rect = EditorGUILayout.GetControlRect(false, headerHeight, GUILayout.ExpandWidth(true));
-            EditorGUI.DrawRect(rect, BlockEditor.HeaderColor);
+            EditorGUI.DrawRect(rect, EmberEditor.HeaderColor);
 
             // Load logo
 
-            Texture2D logo = AssetDatabase.LoadAssetAtPath<Texture2D>(BlockEditor.GetLogoPath());
+            Texture2D logo = AssetDatabase.LoadAssetAtPath<Texture2D>(EmberEditor.GetLogoPath());
 
             if (logo == null)
             {
-                logo = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/{BlockEditor.PackageName}/Logo.png");
+                logo = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/{EmberEditor.PackageName}/Logo.png");
             }
             
             if (logo != null)

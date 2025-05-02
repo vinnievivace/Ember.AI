@@ -6,23 +6,22 @@ using EmberAI.Core;
 using EmberAI.Attributes;
 using UnityEditor;
 using UnityEngine;
-using FileUtil = EmberAI.Core.Util.FileUtil;
 
 namespace EmberAI.Editor
 {
     /// <summary>
     /// Custom Editor for <see cref="Block"/>. Inspired by Odin Inspector!
     /// </summary>
-    [CustomEditor(typeof(BaseBlock), true), CanEditMultipleObjects]
+    [CustomEditor(typeof(EmberBehaviour), true), CanEditMultipleObjects]
     [InitializeOnLoad]
-    public class BlockEditor : UnityEditor.Editor
+    public class EmberEditor : UnityEditor.Editor
     {
         // used to determine path to 'logo.png'
         public const string PackageName = "com.emberai";
         
         public static Color HeaderColor = Color.gray1;
         
-        private BaseBlock _client;
+        private EmberBehaviour _client;
         
         // to facilitate the BoxGroup functionality
         private Dictionary<string, List<SerializedProperty>> _groupedProperties;
@@ -30,7 +29,7 @@ namespace EmberAI.Editor
 
         #region Methods ................................................................................................
         
-        static BlockEditor()
+        static EmberEditor()
         {
             //
         }
@@ -44,23 +43,23 @@ namespace EmberAI.Editor
             
             ValidateSealedMethods();
 
-            foreach (BaseBlock block in FindObjectsByType<BaseBlock>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (EmberBehaviour ember in FindObjectsByType<EmberBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                block.EditorRebuild();
+                ember.InitializeDependencies();
             }
             
         }
         
         private static void ValidateSealedMethods()
         {
-            var sealedMethods = typeof(BaseBlock).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var sealedMethods = typeof(EmberBehaviour).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
             sealedMethods = sealedMethods.Where(m => m.GetCustomAttributes(typeof(SealedMethodAttribute)).Any()).ToArray();
         
             var subClasses = (
                 from assembly in AppDomain.CurrentDomain.GetAssemblies() 
                 from type in assembly.GetTypes() 
-                where type.IsSubclassOf(typeof(BaseBlock))
+                where type.IsSubclassOf(typeof(EmberBehaviour))
                 select type).ToList();
         
             foreach (var info in sealedMethods)
@@ -87,16 +86,21 @@ namespace EmberAI.Editor
             CacheProperties();
         }
 
-        
         public override void OnInspectorGUI()
         {
-            _client = (BaseBlock)target;
-            
-            DrawHeaderRow();
-            DrawProperties();
-            DrawButtons();
+             _client = (EmberBehaviour)target;
+             
+             DrawHeaderRow();
+             DrawProperties();
+             DrawButtons();
         }
-        
+
+        protected override void OnHeaderGUI()
+        {
+            //
+        }
+
+
         public static string GetLogoPath()
         {
             return "Packages/" + PackageName + "/Logo.png";
@@ -142,7 +146,7 @@ namespace EmberAI.Editor
                 normal = { textColor = Color.white }
             };
             
-            GUI.Label(headingRect, "Block: " + _client.name, headingStyle);
+            GUI.Label(headingRect, "EmberAI: " + _client.GetType().Name, headingStyle);
 
             EditorGUI.indentLevel = oldIndent;
         }
@@ -191,8 +195,8 @@ namespace EmberAI.Editor
         {
             EditorLayoutUtils.BeginRows();
            
-            GUIContent loadButtonContent = new GUIContent("Load Settings", "Loads " + nameof(BaseBlock) + " for the current Environment");
-            GUIContent saveButtonContent = new GUIContent("Save Settings", "Save " + nameof(BaseBlock) + " for the current Environment");
+            GUIContent loadButtonContent = new GUIContent("Load Settings", "Loads " + nameof(EmberBehaviour) + " for the current Environment");
+            GUIContent saveButtonContent = new GUIContent("Save Settings", "Save " + nameof(EmberBehaviour) + " for the current Environment");
             GUIContent connectButtonContent = new GUIContent("Connect", "Connect to the Readyverse Launcher Websocket");
             GUIContent disconnectButtonContent = new GUIContent("Disconnect", "Disconnect from the Readyverse Launcher Websocket");
 

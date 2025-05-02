@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 namespace EmberAI.Futureverse.AssetRegistry
 {
-    public class AssetRegistryManager : BaseBlock
+    public class AssetRegistryManager : EmberBehaviour
     {
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 

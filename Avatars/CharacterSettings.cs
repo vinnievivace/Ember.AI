@@ -1,4 +1,5 @@
 using EmberAI.Attributes;
+using EmberAI.Core;
 using UnityEngine;
 
 namespace EmberAI.Avatars
@@ -7,18 +8,38 @@ namespace EmberAI.Avatars
     public class CharacterSettings : BaseData
     {
         [BoxGroup("Movement")]
-        public float walkSpeed    = 3f;
-        public float runSpeed     = 6f;
-        public float crouchSpeed  = 1.5f;
+        public float walkSpeed = 3f;
+        
+        [BoxGroup("Movement")]
+        public float runSpeed = 6f;
+        
+        [BoxGroup("Movement")]
+        public float crouchSpeed = 1.5f;
+        
+        [BoxGroup("Movement")]
+        [Tooltip("Degrees per second to turn toward movement direction")]
+        public float rotationSpeed = 720;
 
         [BoxGroup("Jumping")]
-        public bool  canJump      = true;
-        public float jumpForce    = 7f;
-        public float gravity      = -9.81f;
+        public bool  canJump = true;
+        
+        [BoxGroup("Jumping")]
+        public float jumpForce = 7f;
+        
+        [BoxGroup("Jumping")]
+        public float gravity = -9.81f;
 
         [BoxGroup("Crouch")]
-        public bool  canCrouch    = true;
+        public bool  canCrouch = true;
+        
+        [BoxGroup("Crouch")]
         public float crouchHeight = 1f;
+        
+        [BoxGroup("Animation")]
+        public RuntimeAnimatorController animatorController;
+        
+        [BoxGroup("Animation")]
+        public bool useRootMotion = true;
     }
 
 }

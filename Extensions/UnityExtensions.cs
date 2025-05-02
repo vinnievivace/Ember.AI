@@ -487,6 +487,23 @@ namespace EmberAI.Core
 			SetVisible(source.gameObject, visible);
 		}
 
+		public static void RemoveComponent<T>(this Component target) where T : Component
+		{
+			T component = target.GetComponent<T>();
+			
+			if (component == null) return;
+			
+			if (Application.isPlaying)
+			{
+				Object.Destroy(component);
+			}
+			else
+			{
+				Object.DestroyImmediate(component);
+			}
+			
+		}
+
 		#endregion
 
 		#region Meshes .....................................................................................................

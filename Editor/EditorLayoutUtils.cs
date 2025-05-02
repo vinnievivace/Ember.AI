@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace EmberAI.Editor
 {
     /// <summary>
-    /// Various Editor Layout Utilities used by <see cref="BlockEditor"/> to implement custom attributes / drawers.
+    /// Various Editor Layout Utilities used by <see cref="EmberEditor"/> to implement custom attributes / drawers.
     /// </summary>
     public static class EditorLayoutUtils
     {

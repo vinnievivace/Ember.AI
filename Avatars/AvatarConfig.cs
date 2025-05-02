@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
-
 
 namespace EmberAI.Avatars
 {
@@ -12,14 +10,16 @@ namespace EmberAI.Avatars
         public enum RiggingType { AlteredState, CharacterCreator }
         
         public RiggingType riggingType;
-        public RuntimeAnimatorController animatorController;
-        public bool applyRotationFix;
-
+        
         public string rootName;
+
+        [Tooltip("On instantiation the offset will be applied to the Avatars transform (local rotation)")]
+        public Quaternion rotationOffset;
+        
+        [Tooltip("On instantiation the y offset will be applied to the associated CharacterControllers collider center, to ensure its grounded")]
+        public float yOffset = 0.5f;
         
         public List<AvatarBoneConfig> bones = new List<AvatarBoneConfig>();
-        
-        public List<AvatarBoneFix> boneFixes = new List<AvatarBoneFix>();
         
         public void ResetBones()
         {
@@ -119,39 +119,8 @@ namespace EmberAI.Avatars
     [Serializable]
     public class AvatarBoneConfig
     {
-        //[FormerlySerializedAs("bone")] [HorizontalGroup("Properties", Width = 140), ReadOnly, HideLabel]
         public AvatarBoneID BoneID;
-        
-        //[HorizontalGroup("Properties", MarginLeft = 10, Width = 120), HideLabel]
-        //[PropertyTooltip("Name of the target transform to be mapped to this bone.")]
         public string target;
     }
-    
-    [Serializable]
-    public class AvatarBoneFix
-    {
-        public enum FixType { Rotation, Exclude, Disabled }
-        
-        //[HorizontalGroup("Properties", LabelWidth = 120, Width = 300)]
-        //[PropertyTooltip("Name of the target transform to be mapped to this bone.")]
-        //[DisableIf(nameof(fixType), FixType.Disabled)]
-        public string transformName;
-        
-        //[HorizontalGroup("Properties", MarginLeft = 20), HideLabel]
-        public FixType fixType;
-
-        //[PropertyRange(-360, 360), ShowIf(nameof(fixType), FixType.Rotation)]
-        //[LabelWidth(120)]
-        public int xOffset, yOffset, zOffset;
-        
-        //[ReadOnly, ShowIf(nameof(fixType), FixType.Rotation)]
-        public Vector3 OriginalRotation;
-        
-        public Vector3 RotationOffset => new Vector3(xOffset, yOffset, zOffset);
-
-        
-
-    }
-    
     
 }

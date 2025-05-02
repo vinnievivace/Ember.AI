@@ -2,7 +2,7 @@ namespace EmberAI.Avatars
 {
     using UnityEngine;
 
-    public class NetworkInput : MonoBehaviour, ICharacterInput
+    public class NetworkInput : BaseCharacterInput
     {
         // Suppose you receive these from your networking layer
         public Vector2 syncedMove;
@@ -10,10 +10,25 @@ namespace EmberAI.Avatars
         public bool    syncedRun;
         public bool    syncedCrouch;
 
-        Vector2 ICharacterInput.ReadMovementInput() => syncedMove;
-        bool    ICharacterInput.JumpRequested()     => syncedJump;
-        bool    ICharacterInput.IsRunning()         => syncedRun;
-        bool    ICharacterInput.IsCrouching()       => syncedCrouch;
+        public override Vector2 ReadMovementInput()
+        {
+            return syncedMove;
+        }
+
+        public override bool JumpRequested()
+        {
+            return syncedJump;
+        }
+
+        public override bool IsRunning()
+        {
+            return syncedRun;
+        }
+
+        public override bool IsCrouching()
+        {
+            return syncedCrouch;
+        }
     }
 
 }

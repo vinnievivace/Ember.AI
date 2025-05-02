@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: AS_Staging
   m_EditorClassIdentifier: 
   riggingType: 0
-  animatorController: {fileID: 9100000, guid: 40db3173a05ae3242b1c182a09b0a183, type: 2}
-  applyRotationFix: 0
   rootName: root
+  rotationOffset: {x: -0.70710677, y: 0, z: 0, w: 0.70710677}
   bones:
   - BoneID: 0
     target: root.x
@@ -61,64 +60,3 @@ MonoBehaviour:
     target: foot.r
   - BoneID: 21
     target: toes_01.r
-  boneFixes:
-  - transformName: thigh_twist.l
-    fixType: 2
-    xOffset: 0
-    yOffset: 0
-    zOffset: 0
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: thigh_twist.r
-    fixType: 2
-    xOffset: 0
-    yOffset: 0
-    zOffset: 0
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: leg_twist.l
-    fixType: 2
-    xOffset: 0
-    yOffset: 0
-    zOffset: 0
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: leg_twist.r
-    fixType: 2
-    xOffset: 0
-    yOffset: 0
-    zOffset: 0
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: shoulder.l
-    fixType: 2
-    xOffset: -90
-    yOffset: 0
-    zOffset: 90
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: shoulder.r
-    fixType: 2
-    xOffset: -90
-    yOffset: 0
-    zOffset: -90
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: hand.l
-    fixType: 2
-    xOffset: 0
-    yOffset: -90
-    zOffset: 0
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: hand.r
-    fixType: 2
-    xOffset: 0
-    yOffset: 90
-    zOffset: 0
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: toes_01.l
-    fixType: 2
-    xOffset: 45
-    yOffset: 90
-    zOffset: 180
-    OriginalRotation: {x: 0, y: 0, z: 0}
-  - transformName: toes_01.r
-    fixType: 2
-    xOffset: 45
-    yOffset: 90
-    zOffset: 180
-    OriginalRotation: {x: 0, y: 0, z: 0}

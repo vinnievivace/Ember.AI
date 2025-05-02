@@ -1,9 +1,10 @@
+using System;
 using EmberAI.Attributes;
 using UnityEngine;
 
 namespace EmberAI
 {
-    public abstract class BaseBlock : MonoBehaviour
+    public abstract class EmberBehaviour : MonoBehaviour
     {
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 
@@ -36,12 +37,23 @@ namespace EmberAI
 
         #region Initialization .........................................................................................
 
-        public virtual void EditorRebuild()
+        /// <summary>
+        /// Initialize any dependencies that are instantiated when this component is created. Should only be called in Edit mode.
+        /// </summary>
+        public virtual void InitializeDependencies()
         {
             if(Application.isPlaying) return;
             
-            if(name is "GameObject" or "") name = "BaseBlock";
+            if(name is "GameObject" or "") name = "Ember";
             
+        }
+
+        /// <summary>
+        /// Clean up any dependencies that are instantiated when this component is created. Call prior to Destroying this component.
+        /// </summary>
+        public virtual void DestroyDependencies()
+        {
+            // override       
         }
         
         #endregion
@@ -57,7 +69,17 @@ namespace EmberAI
         private void Start() { OnStart(); }
 
         [SealedMethod] 
-        private void OnDestroy() { OnDestroyed(); }
+        private void Update() { OnUpdate(); }
+
+        [SealedMethod]
+        private void Reset() { OnReset(); }
+
+        [SealedMethod]
+        private void OnDestroy()
+        {
+            DestroyDependencies();
+            OnDestroyed();
+        }
 
         protected virtual void OnAwake()
         {
@@ -69,9 +91,19 @@ namespace EmberAI
             // override
         }
 
+        protected virtual void OnUpdate()
+        {
+            // override       
+        }
+
         protected virtual void OnDestroyed()
         {
-            // override
+            
+        }
+
+        protected virtual void OnReset()
+        {
+            InitializeDependencies();
         }
         
         

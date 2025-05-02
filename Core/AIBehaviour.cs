@@ -1,9 +1,9 @@
 using EmberAI;
 using EmberAI.Attributes;
 
-namespace EmberAI
+namespace EmberAI.Core
 {
-    public class AIBlock : BaseBlock
+    public class AIBehaviour : EmberBehaviour
     {
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 

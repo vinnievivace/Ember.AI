@@ -1,70 +1,121 @@
+using EmberAI;
+using EmberAI.Attributes;
 using EmberAI.Avatars;
+using EmberAI.Core;
 using UnityEngine;
 
-[RequireComponent(typeof(CharacterController))]
-public class CharacterControllerSystem : MonoBehaviour
+public class CharacterControllerSystem : EmberBehaviour
 {
-    [Header("Config")]
-    [SerializeField] CharacterSettings settings;
-    [SerializeField] MonoBehaviour      inputModule;    // must implement ICharacterInput
+    #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 
-    [Header("Animation")]
-    [SerializeField] Animator           animator;       // assign your Animator here
+    #endregion
 
-    [Header("Rotation")]
-    [Tooltip("Degrees per second to turn toward movement direction")]
-    [SerializeField] float              rotationSpeed = 720f;
+    #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
 
-    [Header("Camera")]
-    [Tooltip("If null, will use Camera.main")]
-    [SerializeField] Transform          cameraTransform;
+    #endregion
+
+    #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Animator parameter hashes
-    static readonly int SpeedHash       = Animator.StringToHash("Speed");
-    static readonly int JumpHash        = Animator.StringToHash("Jump");
-    static readonly int GroundedHash    = Animator.StringToHash("Grounded");
-    static readonly int FreeFallHash    = Animator.StringToHash("FreeFall");
+    static readonly int SpeedHash = Animator.StringToHash("Speed");
+    static readonly int JumpHash = Animator.StringToHash("Jump");
+    static readonly int GroundedHash = Animator.StringToHash("Grounded");
+    static readonly int FreeFallHash = Animator.StringToHash("FreeFall");
     static readonly int MotionSpeedHash = Animator.StringToHash("MotionSpeed");
+    
+    private float _verticalVelocity;
+    
+    private Transform _cameraTransform;
+    
+    [BoxGroup("Settings"), SerializeField, OnValueChanged(nameof(ApplySettings))]
+    private CharacterSettings settings;
+    
+    [BoxGroup("Components")]
+    public BaseCharacterInput characterInput;    
 
-    ICharacterInput     _input;
-    CharacterController _cc;
-    float               _verticalVelocity;
+    [BoxGroup("Components"), SerializeField]
+    private Animator animator;
+    
+    [BoxGroup("Components"), SerializeField]
+    private CharacterController _controller;
 
-    void Awake()
+    #endregion
+
+    #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
+
+    #endregion
+
+    #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    #region Static .................................................................................................
+
+    #endregion
+
+    #region Inspector ..............................................................................................
+
+    #endregion
+
+    #region Initialization .........................................................................................
+
+    public override void InitializeDependencies()
     {
-        _cc    = GetComponent<CharacterController>();
-        _input = inputModule as ICharacterInput;
-        if (_input == null)
-            Debug.LogError("Input Module must implement ICharacterInput");
+        base.InitializeDependencies();
+        
+        _controller = this.GetOrAddComponent<CharacterController>();
+        characterInput = GetComponent<BaseCharacterInput>();
+        animator = this.GetOrAddComponent<Animator>();
 
-        if (animator == null)
-            Debug.LogWarning("Animator reference is null—no animation will be driven.");
-
-        if (cameraTransform == null && Camera.main != null)
-            cameraTransform = Camera.main.transform;
+        _controller.center = new Vector3(0, 0.5f, 0);
+        _controller.height = 1;
+        
+        ApplySettings();
     }
 
-    void Update()
+    public override void DestroyDependencies()
     {
+        base.DestroyDependencies();
+        
+        this.RemoveComponent<CharacterController>();
+        this.RemoveComponent<BaseCharacterInput>();
+        this.RemoveComponent<Animator>();
+    }
+
+    #endregion
+
+    #region MonoBehaviours .........................................................................................
+
+    protected override void OnAwake()
+    {
+        base.OnAwake();
+        
+        if (characterInput == null) Debug.LogError("Input Module must implement ICharacterInput");
+
+        if (_cameraTransform == null && Camera.main != null) _cameraTransform = Camera.main.transform;
+    }
+
+    protected override void OnUpdate()
+    {
+        base.OnUpdate();
+    
         // 1) Read raw 2D input (already normalized)
-        Vector2 move2D = _input.ReadMovementInput();
-        bool    run    = _input.IsRunning();
-        bool    crouch = settings.canCrouch && _input.IsCrouching();
-        bool    jump   = settings.canJump  && _input.JumpRequested();
+        Vector2 move2D = characterInput.ReadMovementInput();
+        bool    run    = characterInput.IsRunning();
+        bool    crouch = settings.canCrouch && characterInput.IsCrouching();
+        bool    jump   = settings.canJump  && characterInput.JumpRequested();
 
         // Early-out if no camera
-        if (cameraTransform == null)
+        if (_cameraTransform == null)
         {
             Debug.LogError("No cameraTransform assigned and Camera.main is null!");
             return;
         }
 
         // 2) Build camera-relative basis
-        Vector3 camFwd = cameraTransform.forward;
+        Vector3 camFwd = _cameraTransform.forward;
         camFwd.y = 0;
         camFwd.Normalize();
 
-        Vector3 camRight = cameraTransform.right;
+        Vector3 camRight = _cameraTransform.right;
         camRight.y = 0;
         camRight.Normalize();
 
@@ -78,7 +129,7 @@ public class CharacterControllerSystem : MonoBehaviour
             transform.rotation = Quaternion.RotateTowards(
                 transform.rotation,
                 targetRot,
-                rotationSpeed * Time.deltaTime
+                settings.rotationSpeed * Time.deltaTime
             );
         }
 
@@ -91,7 +142,7 @@ public class CharacterControllerSystem : MonoBehaviour
         Vector3 move = desiredDir.normalized * speed;
 
         // 7) Handle jump + gravity
-        if (_cc.isGrounded)
+        if (_controller.isGrounded)
         {
             _verticalVelocity = -0.1f;
             if (jump)
@@ -101,11 +152,17 @@ public class CharacterControllerSystem : MonoBehaviour
         move.y = _verticalVelocity;
 
         // 8) Apply motion
-        _cc.Move(move * Time.deltaTime);
+        _controller.Move(move * Time.deltaTime);
 
         // 9) Smoothly adjust crouch height (optional)
-        float targetHeight = crouch ? settings.crouchHeight : settings.runSpeed;
-        _cc.height = Mathf.Lerp(_cc.height, targetHeight, 10f * Time.deltaTime);
+        if (settings.canCrouch)
+        {
+            Debug.LogError("Crouch logic disabled, was messing with controller height. FIX");
+            
+            // float targetHeight = crouch ? settings.crouchHeight : settings.runSpeed;
+            //_controller.height = Mathf.Lerp(_controller.height, targetHeight, 10f * Time.deltaTime);
+        }
+        
 
         // 10) Drive Animator parameters
         if (animator)
@@ -114,11 +171,42 @@ public class CharacterControllerSystem : MonoBehaviour
             
             animator.SetFloat(SpeedHash, move2D.magnitude == 0 ? 0 : speed);
             animator.SetBool (JumpHash,  jump);
-            animator.SetBool (GroundedHash, _cc.isGrounded);
-            bool freeFall = !_cc.isGrounded && _verticalVelocity < 0f;
+            animator.SetBool (GroundedHash, _controller.isGrounded);
+            bool freeFall = !_controller.isGrounded && _verticalVelocity < 0f;
             animator.SetBool (FreeFallHash, freeFall);
             // MotionSpeed can be full world‑space speed
             animator.SetFloat(MotionSpeedHash, move2D.magnitude);
         }
     }
+    
+    #endregion
+
+    #region General ................................................................................................
+
+    private void ApplySettings()
+    {
+        if (settings == null)
+        {
+            Debug.LogError("No settings assigned!");
+            
+            return;
+        }
+        
+        animator.runtimeAnimatorController = settings.animatorController;
+        animator.applyRootMotion = settings.useRootMotion;
+    }
+
+    public void ApplyAvatar(Avatar avatar)
+    {
+        animator.avatar = avatar;
+        animator.runtimeAnimatorController = settings.animatorController;
+    }
+    
+    #endregion
+
+    #region Event Handlers .........................................................................................
+
+    #endregion
+
+    #endregion
 }

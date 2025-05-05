@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Core;
 using UnityEngine;
 
 namespace EmberAI.Avatars
 {
-    [CreateAssetMenu(fileName = "AvatarConfig", menuName = "BOMB/AvatarConfig", order = 1)]
+    [CreateAssetMenu(fileName = "AvatarConfig", menuName = EmberAISystem.MenuPath + "Settings/AvatarConfig", order = 1)]
     public class AvatarConfig : ScriptableObject
     {
         public enum RiggingType { AlteredState, CharacterCreator }

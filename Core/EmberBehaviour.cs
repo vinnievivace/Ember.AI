@@ -72,6 +72,12 @@ namespace EmberAI
         private void Update() { OnUpdate(); }
 
         [SealedMethod]
+        private void FixedUpdate() { OnFixedUpdate(); }
+
+        [SealedMethod]
+        private void LateUpdate() { OnLateUpdate(); }
+
+        [SealedMethod]
         private void Reset() { OnReset(); }
 
         [SealedMethod]
@@ -94,6 +100,16 @@ namespace EmberAI
         protected virtual void OnUpdate()
         {
             // override       
+        }
+
+        protected virtual void OnFixedUpdate()
+        {
+            // override      
+        }
+        
+        protected virtual void OnLateUpdate()
+        {
+            // override      
         }
 
         protected virtual void OnDestroyed()

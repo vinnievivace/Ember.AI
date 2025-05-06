@@ -21,7 +21,7 @@ namespace EmberAI.Editor
         
         public static Color HeaderColor = Color.gray1;
         
-        private EmberBehaviour _client;
+        private EmberBehaviour ember;
         
         // to facilitate the BoxGroup functionality
         private Dictionary<string, List<SerializedProperty>> _groupedProperties;
@@ -88,7 +88,7 @@ namespace EmberAI.Editor
 
         public override void OnInspectorGUI()
         {
-             _client = (EmberBehaviour)target;
+             ember = (EmberBehaviour)target;
              
              DrawHeaderRow();
              DrawProperties();
@@ -146,7 +146,7 @@ namespace EmberAI.Editor
                 normal = { textColor = Color.white }
             };
             
-            GUI.Label(headingRect, "EmberAI: " + _client.GetType().Name, headingStyle);
+            GUI.Label(headingRect, "EmberAI: " + ember.GetType().Name, headingStyle);
 
             EditorGUI.indentLevel = oldIndent;
         }
@@ -195,23 +195,26 @@ namespace EmberAI.Editor
         {
             EditorLayoutUtils.BeginRows();
            
-            GUIContent loadButtonContent = new GUIContent("Load Settings", "Loads " + nameof(EmberBehaviour) + " for the current Environment");
-            GUIContent saveButtonContent = new GUIContent("Save Settings", "Save " + nameof(EmberBehaviour) + " for the current Environment");
-            GUIContent connectButtonContent = new GUIContent("Connect", "Connect to the Readyverse Launcher Websocket");
-            GUIContent disconnectButtonContent = new GUIContent("Disconnect", "Disconnect from the Readyverse Launcher Websocket");
+            GUIContent loadButtonContent = new GUIContent("Documentation", "Opens documentation for the " + nameof(EmberBehaviour) + " component");
+            GUIContent showDebug = new GUIContent("Debug", "Runtime Logs for this instance of " + nameof(EmberBehaviour));
+            //GUIContent connectButtonContent = new GUIContent("Connect", "Connect to the Readyverse Launcher Websocket");
+            //GUIContent disconnectButtonContent = new GUIContent("Disconnect", "Disconnect from the Readyverse Launcher Websocket");
 
             if(GUI.Button(EditorLayoutUtils.GetButtonRect(0,0.5f), loadButtonContent, EditorLayoutUtils.GetButtonStyle()))
             {
-                
+                CenteredPopup.Show("Coming soon", "soooooon.");
             }
-            if (GUI.Button(EditorLayoutUtils.GetButtonRect(0, 0.5f), saveButtonContent, EditorLayoutUtils.GetButtonStyle()))
+            
+            GUI.enabled = Application.isPlaying;
+            
+            if (GUI.Button(EditorLayoutUtils.GetButtonRect(0, 0.5f), showDebug, EditorLayoutUtils.GetButtonStyle()))
             {
-                
+                CenteredPopup.Show("Debug: " + ember.name, "....");
             }
 
             GUI.enabled = true;
             
-            if(GUI.Button(EditorLayoutUtils.GetButtonRect(1,0.5f), connectButtonContent, EditorLayoutUtils.GetButtonStyle()))
+            /*if(GUI.Button(EditorLayoutUtils.GetButtonRect(1,0.5f), connectButtonContent, EditorLayoutUtils.GetButtonStyle()))
             {
                 
             }
@@ -223,7 +226,7 @@ namespace EmberAI.Editor
                 
             }
             
-            GUI.enabled = true;
+            GUI.enabled = true;*/
         }
         
         private void CacheProperties()

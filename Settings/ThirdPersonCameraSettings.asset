@@ -15,7 +15,7 @@ MonoBehaviour:
   updateMode: 2
   lockCursor: 0
   mouseZoomSmoothness: 0.5
-  mouseRotateSmoothness: 0.5
+  mouseRotateSmoothness: 0.498
   moveForwardKey: 270
   moveBackKey: 269
   rotateLeftKey: 262
@@ -24,19 +24,19 @@ MonoBehaviour:
   rotateDownKey: 258
   zoomInKey: 270
   zoomOutKey: 269
-  keyboardRotationModifier: 1
+  keyboardRotationModifier: 0.03
   offset: {x: 0, y: 1.5, z: 0.5}
   smoothFollow: 1
   followSpeed: 10
-  rotationMode: 0
+  rotationMode: 1
   rotationSpace: {fileID: 0}
-  rotationRange: {x: 0, y: 90}
+  rotationRange: {x: -20, y: 90}
   rotationSpeed: 5
-  rotationDuration: 5.2
-  distance: 9.999964
-  minDistance: 4
+  rotationDuration: 5
+  distance: 8.199986
+  minDistance: 2
   maxDistance: 10
-  zoomSpeed: 5
+  zoomSpeed: 0.1
   blockingLayers:
     serializedVersion: 2
     m_Bits: 0

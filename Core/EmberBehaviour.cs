@@ -12,12 +12,15 @@ namespace EmberAI
 
         #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
 
+        protected enum LogLevel { Log, Warning, Error };
+        
+        
         #endregion
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
         [BoxGroup(""), InspectorText] 
-        public string description = "Building the Open Metaverse with Blocks.";
+        public string description = "Tools for Metaverse / Blockchain / Extended Reality / AI experiences.";
         
         #endregion
 
@@ -127,6 +130,21 @@ namespace EmberAI
 
         #region General ................................................................................................
 
+        protected void Log(LogLevel level, string message)
+        {
+            // this will be for the per instance logging feature, but for now, just use console
+            switch (level)
+            {
+                case LogLevel.Log: Debug.Log(message); break;
+                case LogLevel.Warning: Debug.LogWarning(message); break;
+                case LogLevel.Error: Debug.LogError(message); break;
+                
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(level), level, null);
+            }
+        }
+        
+        
         #endregion
 
         #region Event Handlers .........................................................................................

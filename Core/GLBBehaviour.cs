@@ -25,6 +25,7 @@ namespace EmberAI.Core
         private static readonly int Special = Animator.StringToHash("Special");
         
         private GameObject _loadedModel;
+        private Task _loadTask;
         
         [BoxGroup("Settings")]
         public string path;
@@ -88,14 +89,32 @@ namespace EmberAI.Core
         protected override void OnAwake()
         {
             base.OnAwake();
+            
+            if(path.IsEmptyString()) return;
 
-            LoadGLBAsync(path);
+            _loadTask = LoadGLBAsync(path);
         }
 
         #endregion
 
         #region General ................................................................................................
 
+        public void LoadGLB(string path)
+        {
+            this.path = path;
+            
+            if(path.IsEmptyString()) return;
+
+            if (_loadTask != null && !_loadTask.IsCompleted)
+            {
+                Debug.LogWarning("Cannot load " + path + " while another GLB is loading.");
+                
+                return;
+            }
+            
+            _loadTask = LoadGLBAsync(path);
+        }
+        
         private async Task LoadGLBAsync(string path)
         {
             GltfImport gltf = new GltfImport();
@@ -112,14 +131,14 @@ namespace EmberAI.Core
                 _loadedModel.SetParent(this);
                 
                 await gltf.InstantiateMainSceneAsync(_loadedModel.transform);
-                // on success event
                 
                 if(type == GLBType.Humanoid) CreateAvatar();
+
+                Log(LogLevel.Log, "Loaded GLB: " + path);;
             }
             else
             {
-                Debug.LogError("Failed to load GLB: " + path);
-                // on fail event
+                Log(LogLevel.Error, "Failed to load GLB: " + path);
             }
         }
 

@@ -5,7 +5,9 @@ using EmberAI.Core;
 using EmberAI.Core.Util;
 using EmberAI.Settings;
 using EmberAI.Util;
+using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace EmberAI.Cameras
 {
@@ -46,9 +48,11 @@ namespace EmberAI.Cameras
         [OnValueChanged(nameof(OnChangeSettings))]
         protected ThirdPersonCameraSettings Settings;
 
-        [BoxGroup("Debug"), SerializeField, ReadOnly]
-        private bool _leftButtonDown, _rightButtonDown;
         
+        [BoxGroup("Debug"), SerializeField, ReadOnly]
+        [UsedImplicitly]
+        private bool LeftButtonDown, RightButtonDown;
+
         #endregion
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
@@ -328,8 +332,8 @@ namespace EmberAI.Cameras
         {
             Vector2 targetRotation = Vector2.zero;
 
-            _leftButtonDown = InputUtil.IsLeftMouseDown();
-            _rightButtonDown = InputUtil.IsRightMouseDown();
+            LeftButtonDown = InputUtil.IsLeftMouseDown();
+            RightButtonDown = InputUtil.IsRightMouseDown();
 
             // Handle rotation based on mouse input
             if (Settings.rotationMode == RotationMode.Always ||

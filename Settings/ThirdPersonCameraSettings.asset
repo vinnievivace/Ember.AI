@@ -28,7 +28,7 @@ MonoBehaviour:
   offset: {x: 0, y: 1.5, z: 0.5}
   smoothFollow: 1
   followSpeed: 10
-  rotationMode: 2
+  rotationMode: 0
   rotationSpace: {fileID: 0}
   rotationRange: {x: 0, y: 90}
   rotationSpeed: 5

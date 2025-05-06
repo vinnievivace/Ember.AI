@@ -34,34 +34,33 @@ namespace EmberAI.Cameras
         private bool _fixedFrame;
         private float _fixedDeltaTime;
         private Vector3 _lastUp;
+        private Quaternion _targetRotation = Quaternion.identity;
+        private Vector3 _targetPosition = Vector3.zero;
+        private Camera _camera;
+        private float _cachedRotationSpeed;
         
-        protected Quaternion _targetRotation = Quaternion.identity;
-        protected Vector3 _targetPosition = Vector3.zero;
-        
-        public static bool InputDisabled { get; set; }
-        
-        
-        [BoxGroup("Target"), SerializeField]
+        [BoxGroup("Settings"), SerializeField]
         protected Transform _target;
         
-        private Camera _camera;
+        [BoxGroup("Settings"), SerializeField] 
+        [OnValueChanged(nameof(OnChangeSettings))]
+        protected ThirdPersonCameraSettings Settings;
 
-        private float _cachedRotationSpeed;
+        [BoxGroup("Debug"), SerializeField, ReadOnly]
+        private bool _leftButtonDown, _rightButtonDown;
         
         #endregion
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
-        private float DistanceTarget { get; set; } // Get/set distance
+        private float DistanceTarget { get; set; } 
         
-        protected Vector3 MoveDirection { get; private set; }
-        
-        protected float XRotation { get; set; } 
-        protected float YRotation { get; set; }
+        public static bool InputDisabled { get; set; }
 
-        [BoxGroup("Settings"), SerializeField] 
-        [OnValueChanged(nameof(OnChangeSettings))]
-        protected ThirdPersonCameraSettings Settings;
+        private Vector3 MoveDirection { get; set; }
+
+        private float XRotation { get; set; }
+        private float YRotation { get; set; }
 
         public Transform Target
         {
@@ -328,6 +327,9 @@ namespace EmberAI.Cameras
         private Vector2 GetRotationInput()
         {
             Vector2 targetRotation = Vector2.zero;
+
+            _leftButtonDown = InputUtil.IsLeftMouseDown();
+            _rightButtonDown = InputUtil.IsRightMouseDown();
 
             // Handle rotation based on mouse input
             if (Settings.rotationMode == RotationMode.Always ||

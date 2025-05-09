@@ -1,78 +1,62 @@
 using System;
 using System.Collections.Generic;
 using Core;
+using EmberAI.Attributes;
+using EmberAI.Core;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace EmberAI.Avatars
 {
     [CreateAssetMenu(fileName = "AvatarConfig", menuName = EmberAISystem.MenuPath + "Settings/AvatarConfig", order = 1)]
-    public class AvatarConfig : ScriptableObject
+    public class AvatarConfig : BaseData
     {
-        public enum RiggingType { AlteredState, CharacterCreator }
+        [BoxGroup("Settings")] 
+        [Tooltip("Attempt to assign the correct Config based on the path / url")]
+        public string nameHint;
         
-        public RiggingType riggingType;
-        
+        [BoxGroup("Root")]
         public string rootName;
 
+        [BoxGroup("Root")]
         [Tooltip("On instantiation the offset will be applied to the Avatars transform (local rotation)")]
         public Quaternion rotationOffset;
         
+        [BoxGroup("Root")]
         [Tooltip("On instantiation the y offset will be applied to the associated CharacterControllers collider center, to ensure its grounded")]
         public float yOffset = 0.5f;
         
-        public List<AvatarBoneConfig> bones = new List<AvatarBoneConfig>();
-        
-        public void ResetBones()
-        {
-            bones.Clear();
+        [BoxGroup("Bones")]
+        [FormerlySerializedAs("bones")] 
+        public List<BoneRetargetConfig> BoneMapping;
 
-            foreach (var map in GetBoneMapping(riggingType))
-            {
-                bones.Add(new AvatarBoneConfig
-                {
-                    BoneID = map.Key,
-                    target = map.Value
-                });
-            }
-        }
+        [FormerlySerializedAs("BoneReparenting2")] [BoxGroup("Bones")] 
+        public List<BoneReparentConfig> BoneReparenting;
         
-        Dictionary<AvatarBoneID, string> GetBoneMapping(RiggingType type)
+        [BoxGroup("Bones")] 
+        public List<BoneRotationConfig> BoneRotations;
+
+        public override void Initialize()
         {
+            base.Initialize();
+
+            //
+            
+        }
+
+        /// <summary>
+        /// TODO - CC mapping, then delete this
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        [Obsolete("Dont use", true)]
+        Dictionary<AvatarBoneID, string> GetBoneMapping()
+        {
+            // generate a config for Character creator then kill this
             Dictionary<AvatarBoneID, string> boneMapping;
 
-            if (type == RiggingType.AlteredState)
-            {
-                rootName = "root";
-                
-                boneMapping = new Dictionary<AvatarBoneID, string>
-                {
-                    { AvatarBoneID.Hips, "root.x" },
-                    { AvatarBoneID.Spine, "spine_01.x" },
-                    { AvatarBoneID.Chest, "spine_02.x" },
-                    { AvatarBoneID.UpperChest, "spine_03.x" },
-                    { AvatarBoneID.Neck, "neck.x" },
-                    { AvatarBoneID.Head, "head.x" },
-                    { AvatarBoneID.LeftShoulder, "shoulder.l" },
-                    { AvatarBoneID.LeftUpperArm, "arm_stretch.l" },
-                    { AvatarBoneID.LeftLowerArm, "forearm_stretch.l" },
-                    { AvatarBoneID.LeftHand, "hand.l" },
-                    { AvatarBoneID.RightShoulder, "shoulder.r" },
-                    { AvatarBoneID.RightUpperArm, "arm_stretch.r" },
-                    { AvatarBoneID.RightLowerArm, "forearm_stretch.r" },
-                    { AvatarBoneID.RightHand, "hand.r" },
-                    { AvatarBoneID.LeftUpperLeg, "thigh_stretch.l" },
-                    { AvatarBoneID.LeftLowerLeg, "leg_stretch.l" },
-                    { AvatarBoneID.LeftFoot, "foot.l" },
-                    { AvatarBoneID.LeftToes, "toes_01.l" },
-                    { AvatarBoneID.RightUpperLeg, "thigh_stretch.r" },
-                    { AvatarBoneID.RightLowerLeg, "leg_stretch.r" },
-                    { AvatarBoneID.RightFoot, "foot.r" },
-                    { AvatarBoneID.RightToes, "toes_01.r" }
-                    
-                };
-            }
-            else if (type == RiggingType.CharacterCreator)
-            {
+            
                 rootName = "RL_BoneRoot";
                 
                 boneMapping = new Dictionary<AvatarBoneID, string>
@@ -105,23 +89,37 @@ namespace EmberAI.Avatars
                     { AvatarBoneID.Jaw, "c_jawbone_x"},
                     { AvatarBoneID.UpperChest, "spine_03_x" }
                 };
-            }
-            else
-            {
-                throw new ArgumentException("Unsupported rigging type: " + type);
-            }
+            
+            
 
             return boneMapping;
         }
-
-
     }
 
     [Serializable]
-    public class AvatarBoneConfig
+    public class BoneRetargetConfig
     {
         public AvatarBoneID BoneID;
         public string target;
     }
     
+    [Serializable]
+    public class BoneReparentConfig
+    {
+        [FormerlySerializedAs("target")] public string boneName;
+        [FormerlySerializedAs("newParent")] public string parentName;
+        
+        public BoneReparentConfig(string boneName, string parentName)
+        {
+            this.boneName = boneName;
+            this.parentName = parentName;
+        }
+    }
+    
+    [Serializable]
+    public class BoneRotationConfig
+    {
+        public AvatarBoneID BoneID;
+        public Vector3 rotation;
+    }
 }

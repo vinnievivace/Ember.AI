@@ -1,8 +1,8 @@
 using System;
 using UnityEngine;
-using UnityEngine.InputSystem.Controls;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 #endif
 
 namespace EmberAI.Core.Util

@@ -28,6 +28,8 @@ namespace EmberAI.Editor
         {
             _dataTarget = (BaseData)target;
 
+            _dataTarget.Initialize();
+            
             DrawHeaderRow();
             DrawProperties();
         }
@@ -64,7 +66,7 @@ namespace EmberAI.Editor
                 alignment = TextAnchor.MiddleLeft
             };
             Rect labelRect = new Rect(rect.x + headerHeight, rect.y, rect.width - headerHeight, rect.height);
-            GUI.Label(labelRect, $"Data: {_dataTarget.name}", style);
+            GUI.Label(labelRect, $"Data: {_dataTarget.name} ({_dataTarget.GetType().Name})", style);
 
             EditorGUI.indentLevel = oldIndent;
         }

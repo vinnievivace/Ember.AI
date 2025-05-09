@@ -1,10 +1,11 @@
 using System.Threading.Tasks;
 using EmberAI.Attributes;
 using EmberAI.Avatars;
-using EmberAI.Core.Util;
 using GLTFast;
 using UnityEngine;
+using UnityEditor;
 using AvatarBuilder = EmberAI.Avatars.AvatarBuilder;
+using FileUtil = EmberAI.Core.Util.FileUtil;
 
 namespace EmberAI.Core
 {
@@ -39,8 +40,8 @@ namespace EmberAI.Core
         [BoxGroup("Avatar")]
         public AvatarConfig avatarConfig;
 
-        [BoxGroup("Avatar")] 
-        public string avatarOutputFolder, avatarOutputName;
+        [BoxGroup("Debug")] 
+        public bool rebuildAvatar;
         
         #endregion
 
@@ -99,9 +100,23 @@ namespace EmberAI.Core
 
         #region General ................................................................................................
 
+        /// <summary>
+        /// Destroys the currently loaded GLB model
+        /// </summary>
+        public void Unload()
+        {
+            if (_loadedModel != null)
+            {
+                Destroy(_loadedModel);
+                _loadedModel = null;
+            }
+        }
+        
         public void LoadGLB(string path)
         {
             this.path = path;
+            
+            Unload();
             
             if(path.IsEmptyString()) return;
 
@@ -119,9 +134,11 @@ namespace EmberAI.Core
         {
             GltfImport gltf = new GltfImport();
             bool success;
+            
+            ImportSettings settings = new ImportSettings { AnimationMethod = AnimationMethod.None };
 
             if (path.StartsWith("http"))
-                success = await gltf.Load(new System.Uri(path));
+                success = await gltf.Load(new System.Uri(path), settings);
             else
                 success = await gltf.Load(path);
 
@@ -131,8 +148,20 @@ namespace EmberAI.Core
                 _loadedModel.SetParent(this);
                 
                 await gltf.InstantiateMainSceneAsync(_loadedModel.transform);
-                
-                if(type == GLBType.Humanoid) CreateAvatar();
+
+                if (type == GLBType.Humanoid)
+                {
+                    Avatar avatar = LoadAvatar(avatarConfig);
+
+                    if (avatar == null || rebuildAvatar)
+                    {
+                        CreateAvatar();
+                    }
+                    else
+                    {
+                        SetHumanoidAvatar(avatar);
+                    }
+                }
 
                 Log(LogLevel.Log, "Loaded GLB: " + path);;
             }
@@ -141,10 +170,18 @@ namespace EmberAI.Core
                 Log(LogLevel.Error, "Failed to load GLB: " + path);
             }
         }
+        
+        private Avatar LoadAvatar(AvatarConfig config)
+        {
+            string avatarPath = FileUtil.Combine("Assets/", AvatarBuilder.OutputFolderName, config.name + ".asset");
+            
+            return AssetDatabase.LoadAssetAtPath<Avatar>(avatarPath);
+        }
 
         private void CreateAvatar()
         {
-            Avatar avatar = AvatarBuilder.Build(transform, avatarConfig, FileUtil.Combine(avatarOutputFolder, avatarOutputName + "_Avatar.asset"));
+            string avatarOutputFolder = FileUtil.CombineWithDataPath(AvatarBuilder.OutputFolderName);
+            Avatar avatar = AvatarBuilder.Build(transform, avatarConfig, FileUtil.Combine(avatarOutputFolder, avatarConfig.name + ".asset"));
 
             SetHumanoidAvatar(avatar);
         }

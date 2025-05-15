@@ -20,7 +20,7 @@ namespace EmberAI.Avatars
 
         [BoxGroup("Root")]
         [Tooltip("On instantiation the offset will be applied to the Avatars transform (local rotation)")]
-        public Quaternion rotationOffset;
+        public Vector3 rotationOffset;
         
         [BoxGroup("Root")]
         [Tooltip("On instantiation the y offset will be applied to the associated CharacterControllers collider center, to ensure its grounded")]

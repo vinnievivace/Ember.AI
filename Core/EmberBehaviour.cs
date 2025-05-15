@@ -130,6 +130,25 @@ namespace EmberAI
 
         #region General ................................................................................................
 
+        /// <summary>
+        /// Dispatched an event, or if no listeners associated, Logs via <see cref="Log"/>
+        /// </summary>
+        /// <param name="ev"></param>
+        /// <param name="content"></param>
+        /// <param name="type"></param>
+        /// <typeparam name="T"></typeparam>
+        protected void DispatchEvent<T>(Action<T> ev, T content, LogLevel type = LogLevel.Log)
+        {
+           // if no listeners are assigned, log to console
+            if (ev == null)
+            {
+                Log(type, content.ToString());
+            }
+            else
+            {
+                ev.Invoke(content);
+            }
+        }
         protected void Log(LogLevel level, string message)
         {
             // this will be for the per instance logging feature, but for now, just use console

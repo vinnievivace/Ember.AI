@@ -489,17 +489,15 @@ namespace EmberAI.Core
 
 		public static void RemoveComponent<T>(this Component target) where T : Component
 		{
-			T component = target.GetComponent<T>();
-			
-			if (component == null) return;
+			if(target == null) return;
 			
 			if (Application.isPlaying)
 			{
-				Object.Destroy(component);
+				Object.Destroy(target);
 			}
 			else
 			{
-				Object.DestroyImmediate(component);
+				Object.DestroyImmediate(target);
 			}
 			
 		}

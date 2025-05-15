@@ -13,6 +13,13 @@ namespace EmberAI.Core
     {
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 
+        #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
+
+        public event System.Action<string> OnLoadComplete;
+        public event System.Action<string> OnLoadError;
+
+        #endregion
+        
         #endregion
 
         #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +46,7 @@ namespace EmberAI.Core
         
         [BoxGroup("Avatar")]
         public AvatarConfig avatarConfig;
-
+        
         [BoxGroup("Debug")] 
         public bool rebuildAvatar;
         
@@ -163,19 +170,24 @@ namespace EmberAI.Core
                     }
                 }
 
-                Log(LogLevel.Log, "Loaded GLB: " + path);;
+                DispatchEvent(OnLoadComplete, path);
+                
             }
             else
             {
-                Log(LogLevel.Error, "Failed to load GLB: " + path);
+                DispatchEvent(OnLoadError, "Failed to load GLB: " + path, LogLevel.Error);
             }
         }
         
         private Avatar LoadAvatar(AvatarConfig config)
         {
+            #if UNITY_EDITOR
             string avatarPath = FileUtil.Combine("Assets/", AvatarBuilder.OutputFolderName, config.name + ".asset");
             
             return AssetDatabase.LoadAssetAtPath<Avatar>(avatarPath);
+            #else
+            return null;
+            #endif
         }
 
         private void CreateAvatar()
@@ -293,17 +305,15 @@ namespace EmberAI.Core
             
             gameObject.GetComponent<CharacterControllerSystem>().ApplyAvatar(avatar);
             
-            // some avatars may have animations baked in, so we need to remove the legacy Animation component
+            // some avatars may have animations baked in, so we need to remove the legacy Animation component that gets attached.
             Animation animationComponent = gameObject.GetComponentInChildren<Animation>();
-            
-            
-            animationComponent.transform.localRotation = avatarConfig.rotationOffset;
-            
             animationComponent.RemoveComponent<Animation>();
-
+            
+            // maybe a bit fragile, apply rotation to the first child...
+            transform.GetChild(0).localEulerAngles = avatarConfig.rotationOffset;
+            
             CharacterController controller = gameObject.GetComponent<CharacterController>();
             controller.center = new Vector3(0, avatarConfig.yOffset, 0);
-
         }
         
         #endregion

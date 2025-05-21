@@ -2,8 +2,11 @@ using System.Threading.Tasks;
 using EmberAI.Attributes;
 using EmberAI.Avatars;
 using GLTFast;
+using GLTFast.Logging;
+using GLTFast.Materials;
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.UI;
 using AvatarBuilder = EmberAI.Avatars.AvatarBuilder;
 using FileUtil = EmberAI.Core.Util.FileUtil;
 
@@ -97,7 +100,7 @@ namespace EmberAI.Core
         protected override void OnAwake()
         {
             base.OnAwake();
-            
+
             if(path.IsEmptyString()) return;
 
             _loadTask = LoadGLBAsync(path);
@@ -139,15 +142,14 @@ namespace EmberAI.Core
         
         private async Task LoadGLBAsync(string path)
         {
-            GltfImport gltf = new GltfImport();
+            GltfImport gltf = new GltfImport(null, null, null, new ConsoleLogger());
+            ImportSettings settings = new ImportSettings { AnimationMethod = AnimationMethod.None};
             bool success;
-            
-            ImportSettings settings = new ImportSettings { AnimationMethod = AnimationMethod.None };
 
             if (path.StartsWith("http"))
                 success = await gltf.Load(new System.Uri(path), settings);
             else
-                success = await gltf.Load(path);
+                success = await gltf.Load(path, settings);
 
             if (success)
             {
@@ -197,81 +199,7 @@ namespace EmberAI.Core
 
             SetHumanoidAvatar(avatar);
         }
-        
-        /// <summary>
-    /// Places any avatar (GLB prefab, humanoid or not) so its lowest visible vertex
-    /// lands exactly at groundPosition.y, and moves XZ to groundPosition as well.
-    /// Logs mesh counts, computed minY, offset, old/new Y positions.
-    /// </summary>
-    public static void PlaceAvatarOnGround(GameObject avatar, Vector3 groundPosition)
-    {
-        float minY = float.MaxValue;
-
-        // 1) MeshFilters
-        var meshFilters = avatar.GetComponentsInChildren<MeshFilter>();
-        foreach (var mf in meshFilters)
-        {
-            Mesh mesh = mf.sharedMesh;
-            if (mesh == null) continue;
-
-            Vector3[] verts = mesh.vertices;
-            var t = mf.transform;
-            for (int i = 0; i < verts.Length; i++)
-            {
-                float worldY = t.TransformPoint(verts[i]).y;
-                if (worldY < minY) minY = worldY;
-            }
-
-            Debug.Log($"[PlaceAvatar] MeshFilter '{mf.name}' → {verts.Length} verts scanned.");
-        }
-
-        // 2) SkinnedMeshRenderers (bake into a temp mesh)
-        var skinned = avatar.GetComponentsInChildren<SkinnedMeshRenderer>();
-        var bakeMesh = new Mesh();
-        foreach (var smr in skinned)
-        {
-            smr.BakeMesh(bakeMesh);
-            Vector3[] verts = bakeMesh.vertices;
-            var t = smr.transform;
-            for (int i = 0; i < verts.Length; i++)
-            {
-                float worldY = t.TransformPoint(verts[i]).y;
-                if (worldY < minY) minY = worldY;
-            }
-
-            Debug.Log($"[PlaceAvatar] SkinnedMeshRenderer '{smr.name}' → {verts.Length} baked verts scanned.");
-        }
-
-        if (minY == float.MaxValue)
-        {
-            Debug.LogWarning("[PlaceAvatar] No mesh data found on avatar!");
-            return;
-        }
-
-        // 3) Compute and apply offset
-        float offsetY = groundPosition.y - minY;
-        var oldPos = avatar.transform.position;
-        var newPos = new Vector3(
-            groundPosition.x,
-            oldPos.y + offsetY,
-            groundPosition.z
-        );
-        avatar.transform.position = newPos;
-
-        Debug.Log(
-            $"[PlaceAvatar] worldMinY: {minY:F4}, " +
-            $"groundY: {groundPosition.y:F4}, " +
-            $"offsetY: {offsetY:F4}, " +
-            $"oldY: {oldPos.y:F4}, newY: {newPos.y:F4}"
-        );
-    }
-
-
-
-
-
-
-        
+     
         #endregion
         
         #region Humanoid ...............................................................................................
@@ -312,8 +240,17 @@ namespace EmberAI.Core
             // maybe a bit fragile, apply rotation to the first child...
             transform.GetChild(0).localEulerAngles = avatarConfig.rotationOffset;
             
+            // all very hacky. need to ensure new avatar not spawned below the ground.
+            CharacterControllerSystem controllerSystem  = gameObject.GetComponent<CharacterControllerSystem>();
             CharacterController controller = gameObject.GetComponent<CharacterController>();
             controller.center = new Vector3(0, avatarConfig.yOffset, 0);
+            controllerSystem.active = false;
+            
+            transform.position = new Vector3(transform.position.x, transform.position.y + 5, transform.position.z);
+            
+            Debug.Log(transform.name + " : " + transform.position);
+            
+            CallbackManager.AddOneOff(this, 0.5f, () => { controllerSystem.active = true; });
         }
         
         #endregion

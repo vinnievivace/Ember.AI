@@ -1,7 +1,9 @@
 using System.Text;
+using EmberAI.Attributes;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Serialization;
 
 namespace EmberAI.Futureverse.AssetRegistry
 {
@@ -17,12 +19,48 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        // Collection: Q29sbGVjdGlvbjo3NjY4OnJvb3Q6MTc1MDg= - Party Bear Unleashed
-
-        public const string PartyBearUnleashedID = "7668:root:17508";
-        public const string VinnieFP = "0xfFffFfff00000000000000000000000000001297";
+        // constants for the ETH collection IDs required by AssetRegistry.
+		private const string TNLCollectionID = "1:evm:0x6bca6de2dbdc4e0d41f7273011785ea16ba47182";
+    	private const string FlufCollectionID = "1:evm:0xccc441ac31f02cd96c153db6fd5fe0a2f4e6a68d";
+    	private const string AIFACollectionID = "1:evm:0x96be46c50e882dbd373081d08e0cde2b055adf6c";
+        private const string ASMBrainCollectionID = "1:evm:0xd0318da435dbce0b347cc6faa330b5a9889e3585";
+        private const string PBCollectionID = "1:evm:0x35471f47c3c0bc5fc75025b97a19ecdde00f78f8";
         
-        public static readonly string AREndPoint = "https://ar-api.futureverse.app/graphql";
+        // constants for the TRN collection IDs required by AssetRegistry
+        private const string GoblinCollectionID = "7668:root:3172";
+    	private const string AlteredStateCollectionID = "7668:root:100452";
+        private const string AtemVehicleCollectionID = "7668:root:16484";
+        private const string PBUnleashedID = "7668:root:17508";
+    	private const string PBMouthCollectionID = "7668:root:18532";
+    	private const string PBEarCollectionID = "7668:root:19556";
+    	private const string PBClothingCollectionID = "7668:root:20580";
+    	private const string PBNeckCollectionID = "7668:root:21604";
+    	private const string PBAnimationCollectionID = "7668:root:22628";
+    	private const string PBHeadCollectionID = "7668:root:23652";
+    	private const string PBEyewearCollectionID = "7668:root:24676";
+    	private const string PBNoseCollectionID = "7668:root:25700";
+
+    	private string[] PBCompleteCollectionIDs = { 
+            PBCollectionID, 
+            PBUnleashedID, 
+            PBAnimationCollectionID, 
+            PBClothingCollectionID, 
+            PBEarCollectionID, 
+            PBEyewearCollectionID, 
+            PBHeadCollectionID, 
+            PBMouthCollectionID, 
+            PBNeckCollectionID,
+        	PBNoseCollectionID
+    	};
+        
+        [BoxGroup("Settings"), SerializeField, ReadOnly]
+        private string AREndPoint = "https://ar-api.futureverse.app/graphql";
+        
+        [BoxGroup("Settings"), SerializeField]
+        private string _TRNAddress = "0xfFffFfff00000000000000000000000000001297";
+
+        [BoxGroup("Settings"), SerializeField]
+        private string _EOAAddress = "0xbC2561EcdaD28555e686303D71d446706f204A12";
         
         #endregion
 
@@ -51,7 +89,7 @@ namespace EmberAI.Futureverse.AssetRegistry
             base.OnAwake();
             
             //GetUserCollections(VinnieFP);
-            GetCollectionAssets(VinnieFP, PartyBearUnleashedID);
+            GetCollectionAssets(_TRNAddress, AtemVehicleCollectionID);
         }
 
         #endregion

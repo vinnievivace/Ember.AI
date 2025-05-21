@@ -31,6 +31,9 @@ namespace EmberAI.Avatars
         [BoxGroup("Settings"), SerializeField, Tooltip("Downward velocity when grounded to keep snapped.")]
         private float groundStick = 2f;
 
+        [BoxGroup("State")] 
+        public bool active = true;
+
         [BoxGroup("Components")]
         public BaseCharacterInput characterInput;
 
@@ -80,6 +83,10 @@ namespace EmberAI.Avatars
 
         protected override void OnUpdate()
         {
+            _controller.enabled = active;
+            
+            if(!active) return;
+            
             // 1) Read input
             Vector2 move2D = characterInput.ReadMovementInput();
             bool    run    = characterInput.IsRunning();

@@ -1,9 +1,10 @@
+using System;
 using System.Text;
 using EmberAI.Attributes;
+using EmberAI.Futureverse.FuturePass;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.Serialization;
 
 namespace EmberAI.Futureverse.AssetRegistry
 {
@@ -84,80 +85,97 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region MonoBehaviours .........................................................................................
 
-        protected override void OnAwake()
+        
+
+        private void OnEnable()
         {
-            base.OnAwake();
-            
-            //GetUserCollections(VinnieFP);
-            GetCollectionAssets(_TRNAddress, AtemVehicleCollectionID);
+            FPAuthManager.Instance.OnLoginComplete += OnFPLoginComplete;
+        }
+
+        private void OnDisable()
+        {
+            FPAuthManager.Instance.OnLoginComplete -= OnFPLoginComplete;
         }
 
         #endregion
 
         #region General ................................................................................................
 
+        private void Initialize()
+        {
+            if (FPAuthManager.Instance.Authenticated)
+            {
+                _TRNAddress = FPAuthManager.Instance.TRNAddress;
+                _EOAAddress = FPAuthManager.Instance.ETHAddress;
+                
+               GetUsersCollections(new []{_TRNAddress, _EOAAddress});
+            }
+            else
+            {
+                throw new Exception("FuturePass not authenticated, unable to initialize AssetRegistryManager");
+            }
+        }
+        
         // https://ar-api.futureverse.app/graphql
         // https://futureverse.mintlify.app/build-an-experience/assets/collectibles-nfts/get-collections-owned-by-a-user
         
-        private async void GetUserCollections(string FPAddress)
+        private async void GetUsersCollections(string[] wallets)
         {
-            string queryString = new ARCollectionsRequest(FPAddress).GetQuery();
+            string queryString = new ARCollectionsRequest(wallets).GetQuery();
+
+            using UnityWebRequest request = new UnityWebRequest(AREndPoint, "POST");
             
-            using (UnityWebRequest request = new UnityWebRequest(AREndPoint, "POST"))
-            {
-                request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(queryString));
-                request.uploadHandler.contentType = "application/json";
-                request.downloadHandler = new DownloadHandlerBuffer();
+            request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(queryString));
+            request.uploadHandler.contentType = "application/json";
+            request.downloadHandler = new DownloadHandlerBuffer();
                 
-                await request.SendWebRequest();
+            await request.SendWebRequest();
 
-                if (request.result == UnityWebRequest.Result.Success)
-                {
-                    GraphQLResponse response = JsonConvert.DeserializeObject<GraphQLResponse>(request.downloadHandler.text);
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                GraphQLResponse response = JsonConvert.DeserializeObject<GraphQLResponse>(request.downloadHandler.text);
                     
-                    Debug.Log($"Received {response.data.collections.edges.Count} collections");
-                    Debug.Log($"Has next page: {response.data.collections.pageInfo.hasNextPage}");
+                Debug.Log($"Received {response.data.collections.edges.Count} collections");
+                Debug.Log($"Has next page: {response.data.collections.pageInfo.hasNextPage}");
 
-                    DebugCollections(response.data.collections);
-                    
-                    GetCollectionAssets(FPAddress, response.data.collections.edges[0].node.id);
-                }
-                else
-                {
-                    Debug.LogError($"Error: {request.error}");
-                }
+                DebugCollections(response.data.collections);
+            }
+            else
+            {
+                Debug.LogError($"Error: {request.error}");
             }
         }
         
         // https://futureverse.mintlify.app/build-an-experience/assets/collectibles-nfts/get-collection
-        private async void GetCollectionAssets(string FPAddress, string collectionId)
+        private async void GetCollectionAssets(string collectionId)
         {
-            string queryString = new ARAssetsRequest(FPAddress, collectionId).GetQuery();
+            string queryString = new ARAssetsRequest(new []{_TRNAddress, _EOAAddress}, new []{collectionId}).GetQuery();
+
+            using UnityWebRequest request = new UnityWebRequest(AREndPoint, "POST");
             
-            using (UnityWebRequest request = new UnityWebRequest(AREndPoint, "POST"))
-            {
-                request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(queryString));
-                request.uploadHandler.contentType = "application/json";
-                request.downloadHandler = new DownloadHandlerBuffer();
+            request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(queryString));
+            request.uploadHandler.contentType = "application/json";
+            request.downloadHandler = new DownloadHandlerBuffer();
                 
-                DebugWebRequest(request);
+            //DebugWebRequest(request);
 
-                await request.SendWebRequest();
+            await request.SendWebRequest();
 
-                if (request.result == UnityWebRequest.Result.Success)
-                {
-                    GraphQLResponse response = JsonConvert.DeserializeObject<GraphQLResponse>(request.downloadHandler.text);
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                GraphQLResponse response = JsonConvert.DeserializeObject<GraphQLResponse>(request.downloadHandler.text);
                     
-                    Debug.Log(response.data);
-                    Debug.Log(request.downloadHandler.text);
+                Debug.Log("response.data = " + response.data);
+                Debug.Log(" response raw = " + request.downloadHandler.text);
+                
+                Log(LogLevel.Log, "edge 1 node name = " + response.data.collections);
                     
-                    //Debug.Log($"Received {response.data.collections.edges.Count} collections");
-                    //Debug.Log($"Has next page: {response.data.collections.pageInfo.hasNextPage}");
-                }
-                else
-                {
-                    Debug.LogError($"Error: {request.error}");
-                }
+                //Debug.Log($"Received {response.data.collections.edges.Count} collections");
+                
+            }
+            else
+            {
+                Debug.LogError($"Error: {request.error}");
             }
         }
         
@@ -165,6 +183,7 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region Debug ..................................................................................................
 
+        // TODO move to some Debug / API Util
         private static void DebugWebRequest(UnityWebRequest request)
         {
             var curl = new StringBuilder();
@@ -223,6 +242,11 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region Event Handlers .........................................................................................
 
+        private void OnFPLoginComplete()
+        {
+            Initialize();
+        }
+        
         #endregion
 
 #endregion

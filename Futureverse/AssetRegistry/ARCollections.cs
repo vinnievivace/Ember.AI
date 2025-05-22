@@ -8,10 +8,16 @@ namespace EmberAI.Futureverse.AssetRegistry
     [Serializable]
     public class ARCollectionsRequest : BaseGraphQLRequest
     {
-        public ARCollectionsRequest(string FPAddress)
+        public ARCollectionsRequest(string walletAddress)
         {
             QueryName = "Collections";
-            Addresses = new string[] { FPAddress };
+            Addresses = new [] { walletAddress };
+        }
+
+        public ARCollectionsRequest(string[] walletAddresses)
+        {
+            QueryName = "Collections";
+            Addresses = walletAddresses;       
         }
 
         public override string GetQuery()
@@ -35,7 +41,6 @@ namespace EmberAI.Futureverse.AssetRegistry
             }
 
             queryString.Append($", first: {ResponseLimit}, after: \"{StartFrom}\"");
-
             queryString.Append(") {");
             queryString.Append(" edges { node { chainId chainType id location name } }");
             queryString.Append(" pageInfo { endCursor hasNextPage }");
@@ -48,10 +53,11 @@ namespace EmberAI.Futureverse.AssetRegistry
 
     public abstract class BaseGraphQLRequest
     {
-        public string QueryName { get; set; }
-        public int ResponseLimit { get; set; } = 100;
-        public string StartFrom { get; set; } = "";
-        public string[] Addresses { get; set; }
+        protected string QueryName { get; set; }
+        protected int ResponseLimit { get; set; } = 100;
+        protected string StartFrom { get; set; } = "";
+        protected string[] Addresses { get; set; }
+        
         public GraphQLEdge[] Edges { get; set; }
         public GraphQLPageInfo PageInfo { get; set; }
 

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace EmberAI.Core.Util
 {
@@ -37,6 +39,22 @@ namespace EmberAI.Core.Util
                 
                 return null;
             }
+        }
+        
+        public static async Task<Texture2D> LoadFromURL(string url)
+        {
+            using UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(url);
+            UnityWebRequestAsyncOperation operation = webRequest.SendWebRequest();
+            
+            while (!operation.isDone) await Task.Yield();
+
+            if (webRequest.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"[TextureLoader] Web request failed: {webRequest.error} @ {url}");
+                return null;
+            }
+
+            return DownloadHandlerTexture.GetContent(webRequest);
         }
         
         public static Texture2D CreateFromImage(string imagePath)

@@ -93,6 +93,13 @@ namespace EmberAI.Futureverse.FuturePass
 
         #region Initialization .........................................................................................
 
+        public override void InitializeDependencies()
+        {
+            base.InitializeDependencies();
+
+            description = "Futureverse: FuturePass Authentication Manager";
+        }
+
         #endregion
 
         #region MonoBehaviours .........................................................................................
@@ -325,7 +332,12 @@ namespace EmberAI.Futureverse.FuturePass
                 RefreshTokenResponse(null);
             }
         }
-
+        
+        
+        #endregion
+        
+        #region UTILS ..........................................................................................
+        
         /// <summary>
         /// Returns URI-safe data with a given input length.
         /// </summary>

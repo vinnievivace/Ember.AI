@@ -68,7 +68,7 @@ namespace EmberAI.Avatars
             Transform root = FindChildRecursively(target, config.rootName, includeInactive: false);
             if (root == null)
             {
-                Debug.LogError($"{prefix} Root '{config.rootName}' not found under '{target.name}'.");
+                Debug.LogError($"{prefix} Root '{config.rootName}' not found under '{target.name}'. [CONFIG] " + config.name);
                 return false;
             }
 

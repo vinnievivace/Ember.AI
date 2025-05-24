@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
+using Core;
 using EmberAI.Attributes;
+using EmberAI.Core;
 using EmberAI.Futureverse.FuturePass;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -8,10 +12,13 @@ using UnityEngine.Networking;
 
 namespace EmberAI.Futureverse.AssetRegistry
 {
-    public class AssetRegistryManager : EmberBehaviour
+    public class AssetRegistryManager : EmberSingleton<AssetRegistryManager>
     {
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 
+        public Action OnCollectionsLoaded;
+        public Action<List<AssetItem>> OnAssetsLoaded;
+        
         #endregion
 
         #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,11 +33,14 @@ namespace EmberAI.Futureverse.AssetRegistry
     	private const string AIFACollectionID = "1:evm:0x96be46c50e882dbd373081d08e0cde2b055adf6c";
         private const string ASMBrainCollectionID = "1:evm:0xd0318da435dbce0b347cc6faa330b5a9889e3585";
         private const string PBCollectionID = "1:evm:0x35471f47c3c0bc5fc75025b97a19ecdde00f78f8";
+        private const string GenesisWalkerCollectionID = "1:evm:0x258aeac01672e6857972707fc129a6a39d09758b";
         
         // constants for the TRN collection IDs required by AssetRegistry
+        
+        public const string AlteredStateCollectionID = "7668:root:100452";
+        
         private const string GoblinCollectionID = "7668:root:3172";
-    	private const string AlteredStateCollectionID = "7668:root:100452";
-        private const string AtemVehicleCollectionID = "7668:root:16484";
+    	private const string AtemVehicleCollectionID = "7668:root:16484";
         private const string PBUnleashedID = "7668:root:17508";
     	private const string PBMouthCollectionID = "7668:root:18532";
     	private const string PBEarCollectionID = "7668:root:19556";
@@ -81,6 +91,13 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region Initialization .........................................................................................
 
+        public override void InitializeDependencies()
+        {
+            base.InitializeDependencies();
+            
+            description = "Futureverse: AssetRegistry Manager - GraphQL for Wallet contents";
+        }
+
         #endregion
 
         #region MonoBehaviours .........................................................................................
@@ -107,8 +124,6 @@ namespace EmberAI.Futureverse.AssetRegistry
             {
                 _TRNAddress = FPAuthManager.Instance.TRNAddress;
                 _EOAAddress = FPAuthManager.Instance.ETHAddress;
-                
-               GetUsersCollections(new []{_TRNAddress, _EOAAddress});
             }
             else
             {
@@ -116,16 +131,18 @@ namespace EmberAI.Futureverse.AssetRegistry
             }
         }
         
-        // https://ar-api.futureverse.app/graphql
-        // https://futureverse.mintlify.app/build-an-experience/assets/collectibles-nfts/get-collections-owned-by-a-user
         
-        private async void GetUsersCollections(string[] wallets)
+        
+        private async Task<TResponse> SendARRequest<TRequest, TResponse>(TRequest graphQLRequest) where TRequest : BaseGraphQLRequest where TResponse : BaseGraphQLResponse, new()
         {
-            string queryString = new ARCollectionsRequest(wallets).GetQuery();
-
-            using UnityWebRequest request = new UnityWebRequest(AREndPoint, "POST");
+            string queryString = graphQLRequest.GetQuery();
             
-            request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(queryString));
+            Log(LogLevel.Log, "QUERY: ");
+            Log(LogLevel.Log, queryString);
+
+            using UnityWebRequest request = new (AREndPoint, "POST");
+            
+            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(queryString));
             request.uploadHandler.contentType = "application/json";
             request.downloadHandler = new DownloadHandlerBuffer();
                 
@@ -133,50 +150,59 @@ namespace EmberAI.Futureverse.AssetRegistry
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                GraphQLResponse response = JsonConvert.DeserializeObject<GraphQLResponse>(request.downloadHandler.text);
-                    
-                Debug.Log($"Received {response.data.collections.edges.Count} collections");
-                Debug.Log($"Has next page: {response.data.collections.pageInfo.hasNextPage}");
+                Log(LogLevel.Log, "RAW RESPONSE:");
+                Log(LogLevel.Log, request.downloadHandler.text);
+                
+                return JsonConvert.DeserializeObject<TResponse>(request.downloadHandler.text);
+            }
+            
+            Log(LogLevel.Error, request.error);
 
-                DebugCollections(response.data.collections);
-            }
-            else
-            {
-                Debug.LogError($"Error: {request.error}");
-            }
+            return null;
         }
         
-        // https://futureverse.mintlify.app/build-an-experience/assets/collectibles-nfts/get-collection
-        private async void GetCollectionAssets(string collectionId)
+        // https://ar-api.futureverse.app/graphql
+        // https://futureverse.mintlify.app/build-an-experience/assets/collectibles-nfts/get-collections-owned-by-a-user
+        private async void GetCollections(string[] wallets)
         {
-            string queryString = new ARAssetsRequest(new []{_TRNAddress, _EOAAddress}, new []{collectionId}).GetQuery();
-
-            using UnityWebRequest request = new UnityWebRequest(AREndPoint, "POST");
+            ARCollectionResponse response = await SendARRequest<ARCollectionsRequest, ARCollectionResponse>(new ARCollectionsRequest(wallets));
             
-            request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(queryString));
-            request.uploadHandler.contentType = "application/json";
-            request.downloadHandler = new DownloadHandlerBuffer();
-                
-            //DebugWebRequest(request);
+            if(response == null) throw new Exception("Failed to get collections");
+            
+            Debug.Log(response.data);;
 
-            await request.SendWebRequest();
+            Debug.Log($"Received {response.data.collections.edges.Count} collections");
+            Debug.Log($"Has next page: {response.data.collections.pageInfo.hasNextPage}");
+            
+            OnCollectionsLoaded?.Invoke();
+        }
 
-            if (request.result == UnityWebRequest.Result.Success)
+        public void GetAssets(string collectionId)
+        {
+            GetAssets(new []{_TRNAddress, _EOAAddress}, collectionId);
+        }
+        
+        private async void GetAssets(string[] wallets, string collectionId)
+        {
+            ARAssetsResponse response = await SendARRequest<ARAssetsRequest, ARAssetsResponse>(new ARAssetsRequest(wallets, new []{collectionId}));
+            
+            if(response == null) throw new Exception("Failed to get collections");
+            
+            var assets = new List<AssetItem>();
+            
+            foreach (AssetEdge edge in response.data.assets.edges)
             {
-                GraphQLResponse response = JsonConvert.DeserializeObject<GraphQLResponse>(request.downloadHandler.text);
-                    
-                Debug.Log("response.data = " + response.data);
-                Debug.Log(" response raw = " + request.downloadHandler.text);
+                string tokenID = edge.node.tokenId;
+                string imagePath = edge.node.metadata.properties.image;
+                string glbPath = edge.node.metadata.properties.glb_url;
+
+                // clumsy, but different collections have different metadata, so not really my clumsy!!
+                if (glbPath.IsEmptyString()) glbPath = edge.node.metadata.properties.model;
                 
-                Log(LogLevel.Log, "edge 1 node name = " + response.data.collections);
-                    
-                //Debug.Log($"Received {response.data.collections.edges.Count} collections");
-                
+                assets.Add(new AssetItem(tokenID, imagePath, glbPath));;
             }
-            else
-            {
-                Debug.LogError($"Error: {request.error}");
-            }
+            
+            OnAssetsLoaded?.Invoke(assets);
         }
         
         #endregion
@@ -227,9 +253,9 @@ namespace EmberAI.Futureverse.AssetRegistry
             Debug.Log(curl.ToString());
         }
         
-        private void DebugCollections(CollectionConnection collections)
+        private void DebugCollections(CollectionList collections)
         {
-            foreach (Edge collection in collections.edges)
+            foreach (CollectionEdge collection in collections.edges)
             {
                 
                 string collectionAssetID = collection.node.chainId + ":" + collection.node.chainType + ":" + collection.node.location;

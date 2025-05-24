@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -60,5 +62,52 @@ namespace EmberAI.Futureverse.AssetRegistry
 
             return JsonConvert.SerializeObject(queryObj);
         }
+    }
+
+    public class ARAssetsResponse : BaseGraphQLResponse
+    {
+        public AssetData data;       
+    }
+    
+    [Serializable]
+    public class AssetData
+    {
+        public AssetList assets;
+    }
+
+    [Serializable]
+    public class AssetList
+    {
+        public List<AssetEdge> edges;
+        public PageInfo pageInfo;
+    }
+
+    [Serializable]
+    public class AssetEdge
+    {
+        public AssetNode node;
+    }
+
+    [Serializable]
+    public class AssetNode
+    {
+        public string id;
+        public string collectionId;
+        public string tokenId;
+        public MetaData metadata;
+    }
+
+    [Serializable]
+    public class MetaData
+    {
+        public AssetProperties properties;
+    }
+    
+    [Serializable]
+    public class AssetProperties
+    {
+        public string image;
+        public string glb_url; // goblins
+        public string model; // alteredstate
     }
 }

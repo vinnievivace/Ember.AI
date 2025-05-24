@@ -5,6 +5,8 @@ using System.Text;
 
 namespace EmberAI.Futureverse.AssetRegistry
 {
+    #region REQUEST ....................................................................................................
+
     [Serializable]
     public class ARCollectionsRequest : BaseGraphQLRequest
     {
@@ -50,62 +52,32 @@ namespace EmberAI.Futureverse.AssetRegistry
             return JsonConvert.SerializeObject(new { query = queryString.ToString() });
         }
     }
-
-    public abstract class BaseGraphQLRequest
-    {
-        protected string QueryName { get; set; }
-        protected int ResponseLimit { get; set; } = 100;
-        protected string StartFrom { get; set; } = "";
-        protected string[] Addresses { get; set; }
-        
-        public GraphQLEdge[] Edges { get; set; }
-        public GraphQLPageInfo PageInfo { get; set; }
-
-        public abstract string GetQuery();
-    }
-
-    public class GraphQLEdge
-    {
-        public GraphQLNode node { get; set; }
-    }
-
-    public class GraphQLNode
-    {
-        public string chainId { get; set; }
-        public string chainType { get; set; }
-        public string id { get; set; }
-        public string location { get; set; }
-        public string name { get; set; }
-    }
-
-    public class GraphQLPageInfo
-    {
-        public string endCursor { get; set; }
-        public bool hasNextPage { get; set; }
-    }
     
+    #endregion
+    
+    #region RESPONSE ...................................................................................................
     
     [Serializable]
-    public class GraphQLResponse
+    public class ARCollectionResponse : BaseGraphQLResponse
     {
-        public Data data;
+        public CollectionData data;
     }
 
     [Serializable]
-    public class Data
+    public class CollectionData
     {
-        public CollectionConnection collections;
+        public CollectionList collections;
     }
 
     [Serializable]
-    public class CollectionConnection
+    public class CollectionList
     {
-        public List<Edge> edges;
+        public List<CollectionEdge> edges;
         public PageInfo pageInfo;
     }
 
     [Serializable]
-    public class Edge
+    public class CollectionEdge
     {
         public CollectionNode node;
     }
@@ -120,10 +92,7 @@ namespace EmberAI.Futureverse.AssetRegistry
         public string name;
     }
 
-    [Serializable]
-    public class PageInfo
-    {
-        public string endCursor;
-        public bool hasNextPage;
-    }
+    
+    
+    #endregion
 }

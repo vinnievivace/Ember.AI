@@ -11,35 +11,136 @@ namespace EmberAI.Avatars
     /// </summary>
     public static class AvatarBuilder
     {
-        #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #endregion
-
-        #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
+        #region FIELDS
 
         /// <summary>
         /// Name of folder (inside StreamingAssets) where runtime generated avatars are stored.
         /// </summary>
         public const string OutputFolderName = "Avatars";
-        
-        #endregion
-
-        #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
         #endregion
 
-        #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
+        #region PUBLIC METHODS
 
         /// <summary>
-        /// Checks that:
-        /// 1) target & config exist
-        /// 2) config.rootName is valid and actually found
-        /// 3) each BoneRetargetConfig.target is non‐empty and present under that root
+        /// Builds a Unity Humanoid Avatar from a runtime-generated model hierarchy.
         /// </summary>
+        /// <param name="target">Root transform of the imported model.</param>
+        /// <param name="config">AvatarConfig containing bone mappings and rig settings.</param>
+        /// <param name="assetPath">Path (in StreamingAssets) to save the generated Avatar asset.</param>
+        /// <returns>The created Avatar, or null on failure.</returns>
+        public static Avatar Build(Transform target, AvatarConfig config, string assetPath)
+        {
+            // Validate inputs and mapping
+            if (!IsValid(target, config))
+            {
+                Debug.LogError("Cannot build Avatar. The target or config is invalid.");
+                return null;
+            }
+
+            // Apply any bone reparenting or manual rotations first
+            ApplyBoneReparenting(target, config);
+            ApplyBoneRotations(target, config);
+
+            // Store original transform
+            Vector3 originalPosition = target.position;
+            Quaternion originalRotation = target.rotation;
+
+            // Reset and apply user-defined T-pose rotation offset
+            target.ResetLocalTransform();
+            target.localRotation = Quaternion.Euler(config.rotationOffset);
+
+            // Prepare HumanDescription
+            HumanDescription humanDescription = new HumanDescription();
+            Transform root = string.IsNullOrEmpty(config.rootName)
+                ? target
+                : target.FindChildTransform(config.rootName);
+
+            if (root == null)
+                throw new Exception("Root transform not found in target hierarchy. looking for " + config.rootName);
+
+            // Map each BoneRetargetConfig to a HumanBone entry
+            var humanBones = new HumanBone[config.BoneMapping.Count];
+            for (int i = 0; i < config.BoneMapping.Count; i++)
+            {
+                var boneConfig = config.BoneMapping[i];
+                var boneTransform = root.FindChildTransform(boneConfig.target);
+                if (boneTransform == null)
+                {
+                    Debug.LogError($"Bone '{boneConfig.BoneID}' (target '{boneConfig.target}') not found.");
+                    return null;
+                }
+
+                humanBones[i] = new HumanBone
+                {
+                    boneName = boneConfig.target,
+                    humanName = boneConfig.BoneID.ToString(),
+                    limit = new HumanLimit { useDefaultValues = true }
+                };
+            }
+
+            // Build the skeleton list
+            SkeletonBone[] skeletonBones = GetSkeleton(root);
+
+            // Assign rig parameters from config
+            humanDescription.human              = humanBones;
+            humanDescription.skeleton           = skeletonBones;
+            humanDescription.armStretch         = config.armStretch;
+            humanDescription.legStretch         = config.legStretch;
+            humanDescription.upperArmTwist      = config.upperArmTwist;
+            humanDescription.lowerArmTwist      = config.lowerArmTwist;
+            humanDescription.upperLegTwist      = config.upperLegTwist;
+            humanDescription.lowerLegTwist      = config.lowerLegTwist;
+            humanDescription.feetSpacing        = config.feetSpacing;
+            humanDescription.hasTranslationDoF  = config.hasTranslationDoF;
+
+            // Optionally roll the shoulders outward
+            if (config.shoulderRollOffset != Vector3.zero)
+                ApplyShoulderRoll(root, config);
+
+            // Create and save the Avatar
+            Avatar avatar;
+            try
+            {
+                avatar = UnityEngine.AvatarBuilder.BuildHumanAvatar(root.gameObject, humanDescription);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Avatar creation failed. Please check bone mappings and hierarchy.", e);
+            }
+
+            if (!avatar.isValid || !avatar.isHuman)
+            {
+                Debug.LogError("Avatar creation failed. Please check bone mappings and hierarchy.");
+                return null;
+            }
+
+            // Persist asset if in Editor
+#if UNITY_EDITOR
+            string directoryPath = System.IO.Path.GetDirectoryName(assetPath);
+            if (!string.IsNullOrEmpty(directoryPath))
+                System.IO.Directory.CreateDirectory(directoryPath);
+
+            UnityEditor.AssetDatabase.CreateAsset(avatar, FileUtil.GetAssetPath(assetPath));
+            UnityEditor.AssetDatabase.SaveAssets();
+            UnityEditor.AssetDatabase.Refresh();
+#endif
+
+            // Restore original transform
+            target.position = originalPosition;
+            target.rotation = originalRotation;
+
+            Debug.Log($"Avatar successfully created and set for the target at '{assetPath}'.");
+            return avatar;
+        }
+
+        #endregion
+
+        #region PRIVATE HELPERS
+
         private static bool IsValid(Transform target, AvatarConfig config)
         {
             const string prefix = "[AvatarValidator]";
-            
             if (target == null)
             {
                 Debug.LogError($"{prefix} Target Transform is null.");
@@ -64,38 +165,27 @@ namespace EmberAI.Avatars
                 return false;
             }
 
-            // 1) find the root once
-            Transform root = FindChildRecursively(target, config.rootName, includeInactive: false);
+            // Find and cache bones
+            Transform root = FindChildRecursively(target, config.rootName, false);
             if (root == null)
             {
-                Debug.LogError($"{prefix} Root '{config.rootName}' not found under '{target.name}'. [CONFIG] " + config.name);
+                Debug.LogError($"{prefix} Root '{config.rootName}' not found under '{target.name}'.");
                 return false;
             }
 
-            // 2) cache all children under root
-            var allBones = root.GetComponentsInChildren<Transform>(includeInactive: false);
-            var boneLookup = new Dictionary<string, Transform>(allBones.Length);
+            var allBones = root.GetComponentsInChildren<Transform>(false);
+            var lookup = new Dictionary<string, Transform>(allBones.Length);
             foreach (var t in allBones)
             {
-                // only keep the first occurrence if there are duplicates
-                if (!boneLookup.ContainsKey(t.name))
-                    boneLookup[t.name] = t;
+                if (!lookup.ContainsKey(t.name))
+                    lookup[t.name] = t;
             }
 
-            // 3) validate every mapping
-            foreach (var boneMap in config.BoneMapping)
+            foreach (var map in config.BoneMapping)
             {
-                if (string.IsNullOrEmpty(boneMap.target))
+                if (string.IsNullOrEmpty(map.target) || !lookup.ContainsKey(map.target))
                 {
-                    Debug.LogWarning($"{prefix} BoneID {boneMap.BoneID} has an empty target name.");
-                    return false;
-                }
-
-                if (!boneLookup.ContainsKey(boneMap.target))
-                {
-                    Debug.LogError(
-                        $"{prefix} Missing bone '{boneMap.target}' (BoneID {boneMap.BoneID}) under root '{config.rootName}'."
-                    );
+                    Debug.LogError($"{prefix} Missing bone '{map.target}' for ID {map.BoneID}." );
                     return false;
                 }
             }
@@ -103,10 +193,6 @@ namespace EmberAI.Avatars
             return true;
         }
 
-        /// <summary>
-        /// Depth‐first search for a child with the given name.
-        /// Honors includeInactive when descending.
-        /// </summary>
         private static Transform FindChildRecursively(Transform parent, string name, bool includeInactive)
         {
             if (parent.name.Equals(name, StringComparison.Ordinal))
@@ -118,243 +204,79 @@ namespace EmberAI.Avatars
                     continue;
 
                 var found = FindChildRecursively(child, name, includeInactive);
-                if (found != null)
-                    return found;
+                if (found != null) return found;
             }
 
             return null;
         }
 
-        public static Avatar Build(Transform target, AvatarConfig config, string assetPath)
-        {
-            if (!IsValid(target, config))
-            {
-                Debug.LogError("Cannot build Avatar. The target or config is invalid.");
-                return null;
-            }
-            
-            ApplyBoneReparenting(target, config);
-            ApplyBoneRotations(target, config);
-            
-            // store position and rotation to allow reset once Avatar is build
-            // this is important to ensure Avatar builds correctly
-            Vector3 originalPosition = target.position;
-            Quaternion originalRotation = target.rotation;
-            
-            target.ResetLocalTransform();
-            
-            HumanDescription humanDescription = new HumanDescription();
-            Transform root = (config.rootName == "") ? target : target.FindChildTransform(config.rootName);
-            
-            if(root == null) throw new Exception("Root transform not found in target hierarchy. looking for " + config.rootName);
-            
-            var humanBones = new HumanBone[config.BoneMapping.Count];
-            int index = 0;
-            
-            foreach (BoneRetargetConfig boneConfig in config.BoneMapping)
-            {
-                Transform boneTransform = root.FindChildTransform(boneConfig.target);
-
-                if (boneTransform == null)
-                {
-                    Debug.LogError($"Bone '{boneConfig.BoneID}' (target transform: '{boneConfig.target}') not found in target hierarchy. Root = " + root.name);
-
-                    return null;
-                }
-
-                humanBones[index] = new HumanBone
-                {
-                    boneName = boneConfig.target,
-                    humanName = boneConfig.BoneID.ToString(),
-                    limit = new HumanLimit { useDefaultValues = true }
-                };
-
-                
-                
-                index++;
-            }
-            
-            var skeletonBones = GetSkeleton(root);
-            
-            humanDescription.human = humanBones;
-            humanDescription.skeleton = skeletonBones;
-            humanDescription.armStretch = 0.05f;
-            humanDescription.legStretch = 0.05f;
-            humanDescription.upperArmTwist = 0.5f;
-            humanDescription.lowerArmTwist = 0.5f;
-            humanDescription.upperLegTwist = 0.5f;
-            humanDescription.lowerLegTwist = 0.5f;
-            humanDescription.feetSpacing = 0f;
-            humanDescription.hasTranslationDoF = false;
-            
-            Avatar avatar;
-           
-            try
-            {
-                avatar = SaveAvatar(root.gameObject, humanDescription, assetPath);
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Avatar creation failed. Please check bone mappings and hierarchy.", e);
-            }
-
-            target.position = originalPosition;
-            target.rotation = originalRotation;
-
-            Debug.Log($"Avatar successfully created and set for the target at '{assetPath}'.");
-            
-            return avatar;
-        }
-
-        private static Avatar SaveAvatar(GameObject target, HumanDescription humanDescription, string assetPath)
-        {
-            Avatar avatar;
-           
-            try
-            {
-                avatar = UnityEngine.AvatarBuilder.BuildHumanAvatar(target, humanDescription);
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Avatar creation failed. Please check bone mappings and hierarchy.", e);
-            }
-
-            if (!avatar.isValid || !avatar.isHuman)
-            {
-                Debug.LogError("Avatar creation failed. Please check bone mappings and hierarchy.");
-                return null;
-            }
-            
-            // Ensure the directory exists
-            string directoryPath = System.IO.Path.GetDirectoryName(assetPath);
-            if (!string.IsNullOrEmpty(directoryPath))
-            {
-                System.IO.Directory.CreateDirectory(directoryPath);
-            }
-            
-            // if running in the Editor, we save the Avatar. 
-            #if UNITY_EDITOR
-            UnityEditor.AssetDatabase.CreateAsset(avatar, FileUtil.GetAssetPath(assetPath));
-            UnityEditor.AssetDatabase.SaveAssets();
-            UnityEditor.AssetDatabase.Refresh();
-            #endif
-            
-            return avatar;
-        }
-
-        /*private static void DebugConfig(Transform target, AvatarConfig config)
-        {
-            if (target == null)
-            {
-                Debug.LogError("Target Transform is null. Cannot debug avatar.");
-                return;
-            }
-
-            if (config == null || config.BoneMapping == null || config.BoneMapping.Count == 0)
-            {
-                Debug.LogError("AvatarConfig or its bones list is null or empty. Cannot debug avatar.");
-                return;
-            }
-
-            foreach (BoneRetargetConfig boneConfig in config.BoneMapping)
-            {
-                // Find the target transform for the current bone
-                Transform boneTransform = target.FindChildTransform(boneConfig.target);
-                if (boneTransform == null)
-                {
-                    Debug.LogWarning($"Couldn't find transform '{boneConfig.target}' for bone '{boneConfig.BoneID}'.");
-                    continue;
-                }
-
-                // Draw a sphere-like debug point at the bone's position using Debug.DrawLine (simulating spheres)
-                Debug.DrawLine(boneTransform.position, boneTransform.position + Vector3.up * 0.01f, Color.green, 0.1f);
-
-                // Draw a line to visualize the hierarchy if the bone has a parent
-                if (boneTransform.parent != null)
-                {
-                    Debug.DrawLine(boneTransform.parent.position, boneTransform.position, Color.yellow, 0.1f);
-                }
-            }
-        }*/
-        
-        #region Skeleton Bones .........................................................................................
-
         private static SkeletonBone[] GetSkeleton(Transform root)
         {
-            List<SkeletonBone> bones = new List<SkeletonBone>();
-            
+            var bones = new List<SkeletonBone>();
             ApplyBoneRetargeting(root, bones);
-            
             return bones.ToArray();
         }
 
-        private static void ApplyBoneRetargeting(Transform sourceTransform, List<SkeletonBone> bones)
+        private static void ApplyBoneRetargeting(Transform current, List<SkeletonBone> bones)
         {
-            SkeletonBone bone = new SkeletonBone
+            bones.Add(new SkeletonBone
             {
-                name = sourceTransform.name,
-                position = sourceTransform.localPosition,
-                rotation = sourceTransform.localRotation,
-                scale = sourceTransform.localScale
-            };
-
-            bones.Add(bone);
-            
-            // Recursively process each child transform.
-            foreach (Transform child in sourceTransform)
-            {
+                name     = current.name,
+                position = current.localPosition,
+                rotation = current.localRotation,
+                scale    = current.localScale
+            });
+            foreach (Transform child in current)
                 ApplyBoneRetargeting(child, bones);
-            }
-        }
-        
-        private static void ApplyBoneRotations(Transform target, AvatarConfig config)
-        {
-            foreach (BoneRotationConfig rotationConfig in config.BoneRotations)
-            {
-                // get bone mapping to apply rotation to correct transform
-                BoneRetargetConfig boneRetargetMap = config.BoneMapping.Find(x => x.BoneID == rotationConfig.BoneID);
-                
-                if(boneRetargetMap == null) throw new Exception($"Bone rotation {rotationConfig.BoneID} has no matching bone mapping.");
-                
-                Transform boneTransform = target.FindChildTransform(boneRetargetMap.target);
-                
-                if (boneTransform == null)
-                {
-                    Debug.LogError($"Target Transform is missing required child: {boneRetargetMap.target} for bone {boneRetargetMap.BoneID}.");
-                    return;
-                }
-                
-                boneTransform.localEulerAngles = boneTransform.localEulerAngles + rotationConfig.rotation;
-            }
         }
 
         private static void ApplyBoneReparenting(Transform target, AvatarConfig config)
         {
-            foreach (BoneReparentConfig reparentConfig in config.BoneReparenting)
+            foreach (var rep in config.BoneReparenting)
             {
-                Transform boneTransform = target.FindChildTransform(reparentConfig.boneName);
-                Transform targetParent = target.FindChildTransform(reparentConfig.parentName);
-                
-                if (boneTransform == null)
+                var bone = target.FindChildTransform(rep.boneName);
+                var parent = target.FindChildTransform(rep.parentName);
+                if (bone == null || parent == null)
                 {
-                    Debug.LogError($"Target Transform is missing required child: {reparentConfig.boneName}.");
-                    return;
+                    Debug.LogError($"Reparenting failed: '{rep.boneName}' or '{rep.parentName}' missing.");
+                    continue;
                 }
-
-                if (targetParent == null)
-                {
-                    Debug.LogError($"Target Transform is missing required parent: {reparentConfig.parentName}.");
-                    return;
-                }
-                
-                Debug.Log("Reparent " + boneTransform.name + " to " + targetParent.name);
-                
-                
-                boneTransform.SetParent(targetParent);
+                bone.SetParent(parent);
             }
         }
 
-        #endregion
+        private static void ApplyBoneRotations(Transform target, AvatarConfig config)
+        {
+            foreach (var rot in config.BoneRotations)
+            {
+                var map = config.BoneMapping.Find(x => x.BoneID == rot.BoneID);
+                if (map == null) throw new Exception($"Bone rotation {rot.BoneID} has no mapping.");
+
+                var t = target.FindChildTransform(map.target);
+                if (t == null)
+                {
+                    Debug.LogError($"Missing bone '{map.target}' for rotation {rot.BoneID}.");
+                    continue;
+                }
+                t.localEulerAngles += rot.rotation;
+            }
+        }
+
+        private static void ApplyShoulderRoll(Transform root, AvatarConfig config)
+        {
+            var leftMap  = config.BoneMapping.Find(b => b.BoneID == AvatarBoneID.LeftShoulder)?.target;
+            var rightMap = config.BoneMapping.Find(b => b.BoneID == AvatarBoneID.RightShoulder)?.target;
+            if (!string.IsNullOrEmpty(leftMap))
+            {
+                var t = root.FindChildTransform(leftMap);
+                if (t != null) t.localEulerAngles += config.shoulderRollOffset;
+            }
+            if (!string.IsNullOrEmpty(rightMap))
+            {
+                var t = root.FindChildTransform(rightMap);
+                if (t != null) t.localEulerAngles -= config.shoulderRollOffset;
+            }
+        }
 
         #endregion
     }

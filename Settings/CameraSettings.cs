@@ -32,10 +32,6 @@ namespace EmberAI.Settings
 	    public KeyCode moveForwardKey = KeyCode.KeypadPlus, moveBackKey = KeyCode.KeypadMinus, 
 		    rotateLeftKey = KeyCode.Keypad6, rotateRightKey = KeyCode.Keypad4, rotateUpKey = KeyCode.Keypad8, rotateDownKey = KeyCode.Keypad2, zoomInKey = KeyCode.KeypadPlus, zoomOutKey = KeyCode.KeypadMinus;
 
-	    [BoxGroup("Keyboard Controls")] 
-	    [Range(0,1)]
-	    public float keyboardRotationModifier = 1;
-	    
 	    [BoxGroup("Position")]
 	    [Tooltip("The offset from target relative to camera rotation")]
 	    public Vector3 offset = new Vector3(0, 1.5f, 0.5f);
@@ -68,6 +64,10 @@ namespace EmberAI.Settings
 	    [BoxGroup("Rotation")]
 	    //[PropertyRange(0, 5)]
 	    public float rotationDuration = 1;
+	    
+	    [BoxGroup("Rotation"), Tooltip("For keyboard or auto rotation, adjust the base rotation speed.")] 
+	    [Range(0,1)]
+	    public float nonMouseRotationModifier = 0.01f;
 
 	    
 	    [BoxGroup("Zoom")] 

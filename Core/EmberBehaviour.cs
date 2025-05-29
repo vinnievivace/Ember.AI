@@ -14,6 +14,8 @@ namespace EmberAI
 
         protected enum LogLevel { Log, Warning, Error };
         
+        public enum UpdateMode { Update, FixedUpdate, LateUpdate }
+        
         
         #endregion
 

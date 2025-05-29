@@ -70,16 +70,23 @@ namespace EmberAI.Avatars
         {
             base.OnUpdate();
             
-            if(settings.updateType == CharacterSettings.UpdateType.Standard) ApplyUpdates(Time.deltaTime);
+            if(settings.updateType == UpdateMode.Update) ApplyUpdates(Time.deltaTime);
         }
 
         protected override void OnLateUpdate()
         {
             base.OnLateUpdate();
             
-            if(settings.updateType == CharacterSettings.UpdateType.Fixed) ApplyUpdates(Time.fixedDeltaTime);
+            if(settings.updateType == UpdateMode.LateUpdate) ApplyUpdates(Time.fixedDeltaTime);
         }
 
+        protected override void OnFixedUpdate()
+        {
+            base.OnFixedUpdate();
+            
+            if(settings.updateType == UpdateMode.FixedUpdate) ApplyUpdates(Time.fixedDeltaTime);
+        }
+        
         #endregion
         
         #region General ................................................................................................

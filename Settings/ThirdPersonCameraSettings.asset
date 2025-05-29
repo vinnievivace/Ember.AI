@@ -28,12 +28,12 @@ MonoBehaviour:
   offset: {x: 0, y: 0.5, z: 0.5}
   smoothFollow: 1
   followSpeed: 10
-  rotationMode: 1
+  rotationMode: 3
   rotationSpace: {fileID: 0}
   rotationRange: {x: -20, y: 90}
   rotationSpeed: 5
   rotationDuration: 5
-  distance: 2.5999982
+  distance: 6.0999904
   minDistance: 2
   maxDistance: 10
   zoomSpeed: 0.1

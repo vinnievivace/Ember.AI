@@ -1,4 +1,3 @@
-using EmberAI;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using UnityEngine;
@@ -9,37 +8,25 @@ namespace EmberAI.Avatars
     public class CharacterControllerSystem : EmberBehaviour
     {
         // Animator parameter hashes
-        private static readonly int SpeedHash = Animator.StringToHash("Speed");
-        private static readonly int JumpHash = Animator.StringToHash("Jump");
-        private static readonly int GroundedHash = Animator.StringToHash("Grounded");
-        private static readonly int FreeFallHash = Animator.StringToHash("FreeFall");
+        private static readonly int SpeedHash       = Animator.StringToHash("Speed");
+        private static readonly int JumpHash        = Animator.StringToHash("Jump");
+        private static readonly int GroundedHash    = Animator.StringToHash("Grounded");
+        private static readonly int FreeFallHash    = Animator.StringToHash("FreeFall");
         private static readonly int MotionSpeedHash = Animator.StringToHash("MotionSpeed");
 
         // Settings
-        [BoxGroup("Settings"), SerializeField]
+        [BoxGroup("Settings"), SerializeField] 
         private CharacterSettings settings;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Layers considered as ground.")]
-        private LayerMask groundLayer;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Distance to check for ground detection.")]
-        private float groundCheckDistance = 0.2f;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Downward velocity when grounded to keep snapped.")]
-        private float groundStick = 2f;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Animation playback speed when idle.")]
-        private float idleAnimationSpeed = 1f;
-
+        
         // State
-        [BoxGroup("State")]
-        public bool active = true;
+        [BoxGroup("State")] public bool active = true;
 
         // Components
-        [BoxGroup("Components")]
-        public BaseCharacterInput characterInput;
-        [BoxGroup("Components"), SerializeField]
-        private Animator animator;
-        [BoxGroup("Components"), SerializeField]
-        private CharacterController controller;
+        [BoxGroup("Components")] public BaseCharacterInput characterInput;
+        [BoxGroup("Components"), SerializeField] private Animator animator;
+        [BoxGroup("Components"), SerializeField] private CharacterController controller;
 
-        // Runtime variables
+        // Runtime
         private Transform cameraTransform;
         private float verticalVelocity;
 
@@ -48,11 +35,11 @@ namespace EmberAI.Avatars
         public override void InitializeDependencies()
         {
             base.InitializeDependencies();
-            controller = this.GetOrAddComponent<CharacterController>();
-            animator = this.GetOrAddComponent<Animator>();
+            controller     = this.GetOrAddComponent<CharacterController>();
+            animator       = this.GetOrAddComponent<Animator>();
             characterInput = GetComponent<BaseCharacterInput>();
-
-            // Default capsule settings
+            
+            // Default capsule
             controller.center = new Vector3(0f, 0.5f, 0f);
             controller.height = 1f;
 
@@ -69,15 +56,14 @@ namespace EmberAI.Avatars
 
         #endregion
 
-        #region MonoBehaviour Overrides
+        #region MonoBehaviour
 
         protected override void OnAwake()
         {
             base.OnAwake();
-            cameraTransform = Camera.main != null ? Camera.main.transform : null;
-
-            if (characterInput == null)
-                Debug.LogError("Input Module must implement BaseCharacterInput");
+            cameraTransform = Camera.main?.transform;
+            if (cameraTransform == null)
+                Debug.LogError("No Camera.main found for direction calculation.");
         }
 
         protected override void OnUpdate()
@@ -85,126 +71,123 @@ namespace EmberAI.Avatars
             controller.enabled = active;
             if (!active) return;
 
-            // Read inputs
-            Vector2 moveInput = characterInput.ReadMovementInput();
-            bool isRunning = characterInput.IsRunning();
-            bool isCrouching = settings.canCrouch && characterInput.IsCrouching();
-            bool wantsJump = settings.canJump && characterInput.JumpRequested();
+            // Read input
+            Vector2 moveInput   = characterInput.ReadMovementInput();
+            bool    isRunning   = characterInput.IsRunning();
+            bool    isCrouching = settings.canCrouch && characterInput.IsCrouching();
+            bool    jumpRequested = settings.canJump && characterInput.JumpRequested();
 
-            if (cameraTransform == null)
-            {
-                Debug.LogError("No cameraTransform assigned and Camera.main is null!");
-                return;
-            }
+            // Movement dir & rotation
+            Vector3 moveDir = CalculateMoveDirection(moveInput);
+            RotateTowards(moveDir);
 
-            // Calculate movement direction and rotation
-            Vector3 moveDirection = CalculateMoveDirection(moveInput);
-            RotateTowards(moveDirection);
-
-            // Determine movement speed
-            float targetSpeed = DetermineSpeed(isRunning, isCrouching);
+            // Speed & motion
+            float  targetSpeed = isCrouching ? settings.crouchSpeed
+                                : isRunning   ? settings.runSpeed
+                                              : settings.walkSpeed;
             bool isMoving = moveInput.sqrMagnitude > 0f;
 
-            // Ground check and physics
-            bool isGrounded = CheckGround(out Vector3 groundNormal);
-            ApplyGravityAndJump(wantsJump, isGrounded);
+            // Ground check using CharacterController
+            bool wasGrounded = controller.isGrounded;
 
-            // Move the character
-            Vector3 finalMovement = ProjectMovement(moveDirection, targetSpeed, groundNormal);
-            controller.Move(finalMovement * Time.deltaTime);
+            // Jump & gravity
+            if (wasGrounded)
+            {
+                // snap to ground
+                verticalVelocity = - settings.groundStick;
+                if (jumpRequested)
+                {
+                    verticalVelocity = settings.jumpForce;
+                }
+            }
+            else
+            {
+                verticalVelocity += settings.gravity * Time.deltaTime;
+            }
 
-            // Update animator parameters
-            UpdateAnimator(isMoving, targetSpeed, wantsJump, isGrounded, moveInput.magnitude);
+            // Calculate slope-normal for when grounded
+            Vector3 groundNormal = Vector3.up;
+            if (wasGrounded)
+            {
+                groundNormal = SampleGroundNormal();
+            }
+
+            // Final movement vector
+            Vector3 horizontal = Vector3.ProjectOnPlane(moveDir.normalized * targetSpeed, groundNormal);
+            Vector3 velocity   = horizontal + Vector3.up * verticalVelocity;
+
+            // Move character
+            controller.Move(velocity * Time.deltaTime);
+
+            // Animator updates
+            bool isGroundedNow = controller.isGrounded;
+            bool didJump       = jumpRequested && wasGrounded;
+            UpdateAnimator(isMoving, targetSpeed, didJump, isGroundedNow, moveInput.magnitude);
         }
 
+        #endregion
+        
+        #region Animation Events .......................................................................................
+        
+        private void OnFootstep(AnimationEvent animationEvent)
+        {
+            /*if (animationEvent.animatorClipInfo.weight > 0.5f)
+            {
+                if (FootstepAudioClips.Length > 0)
+                {
+                    var index = Random.Range(0, FootstepAudioClips.Length);
+                    AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
+                }
+            }*/
+        }
+
+        private void OnLand(AnimationEvent animationEvent)
+        {
+            /*if (animationEvent.animatorClipInfo.weight > 0.5f && LandingAudioClip != null)
+            {
+                AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+            }*/
+        }
+        
         #endregion
 
         #region Helpers
 
         private Vector3 CalculateMoveDirection(Vector2 input)
         {
-            Vector3 forward = cameraTransform.forward;
-            forward.y = 0f;
-            forward.Normalize();
-
-            Vector3 right = cameraTransform.right;
-            right.y = 0f;
-            right.Normalize();
-
-            return forward * input.y + right * input.x;
+            Vector3 fwd = cameraTransform.forward; fwd.y = 0; fwd.Normalize();
+            Vector3 right = cameraTransform.right; right.y = 0; right.Normalize();
+            return fwd * input.y + right * input.x;
         }
 
         private void RotateTowards(Vector3 direction)
         {
-            if (direction.sqrMagnitude > 0.001f)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.RotateTowards(
-                    transform.rotation,
-                    targetRotation,
-                    settings.rotationSpeed * Time.deltaTime
-                );
-            }
+            if (direction.sqrMagnitude < 0.001f) return;
+            Quaternion targetRot = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, settings.rotationSpeed * Time.deltaTime);
         }
 
-        private float DetermineSpeed(bool isRunning, bool isCrouching)
+        private Vector3 SampleGroundNormal()
         {
-            if (isCrouching) return settings.crouchSpeed;
-            if (isRunning) return settings.runSpeed;
-            return settings.walkSpeed;
+            // simple raycast down from center
+            Vector3 origin = transform.position + Vector3.up * (controller.height * 0.5f);
+            if (Physics.Raycast(origin, Vector3.down, out var hit, controller.height * 0.5f + 0.1f, settings.groundLayer))
+                return hit.normal;
+            return Vector3.up;
         }
 
-        private bool CheckGround(out Vector3 groundNormal)
-        {
-            Vector3 origin = transform.position + controller.center;
-            float radius = controller.radius;
-            float distance = groundCheckDistance + controller.skinWidth;
-
-            if (Physics.SphereCast(origin, radius, Vector3.down, out RaycastHit hit, distance, groundLayer))
-            {
-                groundNormal = hit.normal;
-                return true;
-            }
-
-            groundNormal = Vector3.up;
-            return false;
-        }
-
-        private void ApplyGravityAndJump(bool wantsJump, bool isGrounded)
-        {
-            if (isGrounded)
-            {
-                verticalVelocity = -groundStick;
-                if (wantsJump)
-                    verticalVelocity = settings.jumpForce;
-            }
-            else
-            {
-                verticalVelocity += settings.gravity * Time.deltaTime;
-            }
-        }
-
-        private Vector3 ProjectMovement(Vector3 direction, float speed, Vector3 groundNormal)
-        {
-            Vector3 horizontal = direction.normalized * speed;
-            Vector3 slopeMovement = Vector3.ProjectOnPlane(horizontal, groundNormal);
-            return slopeMovement + Vector3.up * verticalVelocity;
-        }
-
-        private void UpdateAnimator(bool isMoving, float speed, bool jumped, bool isGrounded, float inputMagnitude)
+        private void UpdateAnimator(bool isMoving, float speed, bool jumped, bool isGrounded, float inputMag)
         {
             if (animator == null) return;
 
-            // Drive locomotion blend
-            animator.SetFloat(SpeedHash, isMoving ? speed : 0f);
-            animator.SetBool(JumpHash, jumped);
-            animator.SetBool(GroundedHash, isGrounded);
+            animator.SetFloat(SpeedHash,     isMoving ? speed : 0f);
+            animator.SetBool(JumpHash,       jumped);
+            animator.SetBool(GroundedHash,   isGrounded);
 
             bool isFalling = !isGrounded && verticalVelocity < 0f;
             animator.SetBool(FreeFallHash, isFalling);
 
-            // Ensure idle animation still plays by preventing zero motion speed
-            float motionSpeed = isMoving ? inputMagnitude : idleAnimationSpeed;
+            float motionSpeed = isMoving ? inputMag : settings.idleAnimationSpeed;
             animator.SetFloat(MotionSpeedHash, motionSpeed);
         }
 
@@ -212,18 +195,18 @@ namespace EmberAI.Avatars
         {
             if (settings == null)
             {
-                Debug.LogError("No settings assigned!");
+                Debug.LogError("CharacterSettings missing on CharacterControllerSystem.");
                 return;
             }
-
             animator.runtimeAnimatorController = settings.animatorController;
-            animator.applyRootMotion = settings.useRootMotion;
+            animator.applyRootMotion             = settings.useRootMotion;
         }
 
         public void ApplyAvatar(Avatar avatar)
         {
-            animator.avatar = avatar;
+            animator.avatar                     = avatar;
             animator.runtimeAnimatorController = settings.animatorController;
+            animator.Rebind();
         }
 
         #endregion

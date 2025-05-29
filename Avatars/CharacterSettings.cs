@@ -20,6 +20,10 @@ namespace EmberAI.Avatars
         [Tooltip("Degrees per second to turn toward movement direction")]
         public float rotationSpeed = 720;
 
+        [BoxGroup("Movement")]
+        [InspectorText, SerializeField]
+        private string keyboardMappingInfo = "NOTE: Keyboard Mappings assigned on " + nameof(KeyboardMouseInput) + " Component";
+        
         [BoxGroup("Jumping")]
         public bool  canJump = true;
         
@@ -40,6 +44,14 @@ namespace EmberAI.Avatars
         
         [BoxGroup("Animation")]
         public bool useRootMotion = true;
+        
+        [BoxGroup("Animation"), Tooltip("Idle animation playback speed.")]     
+        public float idleAnimationSpeed = 1f;
+        
+        [BoxGroup("Ground"), Tooltip("Layers considered as ground.")]
+        public LayerMask groundLayer;
+        
+        [BoxGroup("Ground"), Tooltip("Downward velocity when grounded to keep snapped.")] 
+        public float groundStick = 2f;
     }
-
 }

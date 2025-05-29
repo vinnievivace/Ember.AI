@@ -203,7 +203,7 @@ namespace EmberAI.Futureverse.AssetRegistry
                 
                     assets.Add(new AssetItem(tokenID, imagePath, glbPath));
                 }
-                catch (Exception e)
+                catch 
                 {
                     Debug.LogError("invalid meta data for token " + edge.node.tokenId + ", cannot add to asset list");
                 }

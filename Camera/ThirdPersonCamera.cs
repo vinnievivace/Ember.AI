@@ -3,6 +3,7 @@ using EmberAI.Attributes;
 using EmberAI.Core;
 using EmberAI.Core.Util;
 using EmberAI.Settings;
+using EmberAI.UI;
 using JetBrains.Annotations;
 using UnityEngine;
 
@@ -102,13 +103,15 @@ namespace EmberAI.Cameras
         protected override void OnUpdate()
         {
             base.OnUpdate();
+
+            if (UIManager.Instance != null) InputDisabled = UIManager.Instance.UIInteraction;
+            
             if (InputDisabled || _target == null) return;
 
             Cursor.lockState = Settings.lockCursor ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible   = !Settings.lockCursor;
 
-            if (Settings.updateMode == UpdateMode.Update)
-                UpdateTransform(Time.deltaTime);
+            if (Settings.updateMode == UpdateMode.Update) UpdateTransform(Time.deltaTime);
         }
 
         protected override void OnFixedUpdate()

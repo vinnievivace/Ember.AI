@@ -24,15 +24,15 @@ MonoBehaviour:
   rotateDownKey: 258
   zoomInKey: 270
   zoomOutKey: 269
-  keyboardRotationModifier: 0.03
   offset: {x: 0, y: 0.5, z: 0.5}
   smoothFollow: 1
   followSpeed: 10
-  rotationMode: 3
+  rotationMode: 0
   rotationSpace: {fileID: 0}
   rotationRange: {x: -20, y: 90}
   rotationSpeed: 5
   rotationDuration: 5
+  nonMouseRotationModifier: 0.01
   distance: 6.0999904
   minDistance: 2
   maxDistance: 10

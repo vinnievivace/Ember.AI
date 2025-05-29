@@ -1,5 +1,6 @@
 using EmberAI.Attributes;
 using EmberAI.Core;
+using EmberAI.UI;
 using UnityEngine;
 
 namespace EmberAI.Avatars
@@ -93,6 +94,8 @@ namespace EmberAI.Avatars
         
         private void ApplyUpdates(float delta)
         {
+            if (UIManager.Instance != null) active = !UIManager.Instance.UIInteraction;
+            
             controller.enabled = active;
             if (!active) return;
 

@@ -29,8 +29,13 @@ namespace EmberAI.Core.Util
             #endif
             return Input.GetMouseButtonDown(1);
         }
-        
-        public static bool GetKey(KeyCode keyCode)
+
+        /// <summary>
+        /// Determines whether the specified key is currently being pressed. Supports both new and legacy Input Systems.
+        /// </summary>
+        /// <param name="keyCode">The key code to check for a pressed state.</param>
+        /// <returns>Returns true if the specified key is currently being pressed; otherwise, false.</returns>
+        public static bool IsKeyDown(KeyCode keyCode)
         {
             #if ENABLE_INPUT_SYSTEM
             if (UseNewInputSystem && Keyboard.current != null)
@@ -44,7 +49,7 @@ namespace EmberAI.Core.Util
                 }
             }
             #endif
-            // fallback to legacy
+            
             return Input.GetKey(keyCode);
         }
     }

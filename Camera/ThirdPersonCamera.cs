@@ -347,17 +347,17 @@ namespace EmberAI.Cameras
             // Handle rotation based on keyboard input
             bool isKeyboardRotation = false;
 
-            if (InputUtil.GetKey(Settings.rotateLeftKey))
+            if (InputUtil.IsKeyDown(Settings.rotateLeftKey))
             {
                 isKeyboardRotation = true;
                 targetRotation.x = 1;
             }
-            else if (InputUtil.GetKey(Settings.rotateRightKey))
+            else if (InputUtil.IsKeyDown(Settings.rotateRightKey))
             {
                 isKeyboardRotation = true;
                 targetRotation.x = -1;
             }
-            if (InputUtil.GetKey(Settings.rotateUpKey))
+            if (InputUtil.IsKeyDown(Settings.rotateUpKey))
             {
                 isKeyboardRotation = true;
                 targetRotation.y = 1;

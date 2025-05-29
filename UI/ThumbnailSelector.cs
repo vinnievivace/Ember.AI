@@ -1,4 +1,5 @@
 using EmberAI.Attributes;
+using EmberAI.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,8 +22,14 @@ namespace EmberAI.UI
         [BoxGroup("Settings"), SerializeField]
         private Thumbnail _headingPrefab, _thumbnailPrefab;
 
-        [BoxGroup("Settings"), SerializeField] 
+        [BoxGroup("Components"), SerializeField] 
         private HorizontalOrVerticalLayoutGroup _contentLayout;
+        
+        [BoxGroup("Components"), SerializeField] 
+        private ScrollRect _scrollRect;
+        
+        [BoxGroup("Components"), Tooltip("Required for correct scrolling. Set H or V to 'preferred size"), SerializeField]
+        private ContentSizeFitter _contentSizeFitter;
         
         #endregion
 
@@ -49,6 +56,28 @@ namespace EmberAI.UI
             description = "Scrollable Thumbnail Selector UI";
 
             if (_contentLayout == null) _contentLayout = GetComponentInChildren<HorizontalOrVerticalLayoutGroup>();
+            if(_scrollRect == null) _scrollRect = GetComponentInChildren<ScrollRect>();
+
+            if (_scrollRect != null)
+            {
+                _scrollRect.movementType = ScrollRect.MovementType.Elastic;
+            }
+
+            if (_contentLayout != null)
+            {
+                _contentSizeFitter = _contentLayout.GetOrAddComponent<ContentSizeFitter>();
+
+                if (_contentLayout is VerticalLayoutGroup)
+                {
+                    _contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                    _contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                }
+                else
+                {
+                    _contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                    _contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                }
+            }
         }
 
         #endregion

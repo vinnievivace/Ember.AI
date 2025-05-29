@@ -68,33 +68,44 @@ namespace EmberAI.Avatars
 
         protected override void OnUpdate()
         {
+            base.OnUpdate();
+            
+            if(settings.updateType == CharacterSettings.UpdateType.Standard) ApplyUpdates(Time.deltaTime);
+        }
+
+        protected override void OnLateUpdate()
+        {
+            base.OnLateUpdate();
+            
+            if(settings.updateType == CharacterSettings.UpdateType.Fixed) ApplyUpdates(Time.fixedDeltaTime);
+        }
+
+        #endregion
+        
+        #region General ................................................................................................
+        
+        private void ApplyUpdates(float delta)
+        {
             controller.enabled = active;
             if (!active) return;
 
-            // Read input
             Vector2 moveInput   = characterInput.ReadMovementInput();
             bool    isRunning   = characterInput.IsRunning();
             bool    isCrouching = settings.canCrouch && characterInput.IsCrouching();
             bool    jumpRequested = settings.canJump && characterInput.JumpRequested();
 
-            // Movement dir & rotation
             Vector3 moveDir = CalculateMoveDirection(moveInput);
             RotateTowards(moveDir);
 
-            // Speed & motion
-            float  targetSpeed = isCrouching ? settings.crouchSpeed
-                                : isRunning   ? settings.runSpeed
-                                              : settings.walkSpeed;
+            float  targetSpeed = isCrouching ? settings.crouchSpeed : isRunning   ? settings.runSpeed : settings.walkSpeed;
             bool isMoving = moveInput.sqrMagnitude > 0f;
-
-            // Ground check using CharacterController
             bool wasGrounded = controller.isGrounded;
 
-            // Jump & gravity
             if (wasGrounded)
             {
                 // snap to ground
                 verticalVelocity = - settings.groundStick;
+                
                 if (jumpRequested)
                 {
                     verticalVelocity = settings.jumpForce;
@@ -102,29 +113,27 @@ namespace EmberAI.Avatars
             }
             else
             {
-                verticalVelocity += settings.gravity * Time.deltaTime;
+                verticalVelocity += settings.gravity * delta;
             }
 
-            // Calculate slope-normal for when grounded
             Vector3 groundNormal = Vector3.up;
+            
             if (wasGrounded)
             {
                 groundNormal = SampleGroundNormal();
             }
 
-            // Final movement vector
             Vector3 horizontal = Vector3.ProjectOnPlane(moveDir.normalized * targetSpeed, groundNormal);
             Vector3 velocity   = horizontal + Vector3.up * verticalVelocity;
 
-            // Move character
             controller.Move(velocity * Time.deltaTime);
 
-            // Animator updates
             bool isGroundedNow = controller.isGrounded;
             bool didJump       = jumpRequested && wasGrounded;
+            
             UpdateAnimator(isMoving, targetSpeed, didJump, isGroundedNow, moveInput.magnitude);
         }
-
+        
         #endregion
         
         #region Animation Events .......................................................................................
@@ -150,8 +159,8 @@ namespace EmberAI.Avatars
         }
         
         #endregion
-
-        #region Helpers
+        
+        #region Movement calculations ..................................................................................
 
         private Vector3 CalculateMoveDirection(Vector2 input)
         {

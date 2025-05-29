@@ -7,6 +7,11 @@ namespace EmberAI.Avatars
     [CreateAssetMenu(menuName = "Characters/Character Settings")]
     public class CharacterSettings : BaseData
     {
+        public enum UpdateType { Standard, Fixed }
+        
+        [BoxGroup("Movement"), Tooltip("Determines when movement is updated, either in the standard Update loop, or the recommended FixedUpdate for Physics logic.")]
+        public UpdateType updateType = UpdateType.Fixed;
+        
         [BoxGroup("Movement")]
         public float walkSpeed = 3f;
         

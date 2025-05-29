@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using EmberAI.Core;
 using EmberAI.Attributes;
+using EmberAI.Attributes.EmberAI.Attributes;
 using UnityEditor;
 using UnityEngine;
 
@@ -92,7 +93,9 @@ namespace EmberAI.Editor
              
              DrawHeaderRow();
              DrawProperties();
-             DrawButtons();
+             DrawDefaultButtons();
+             
+             EditorLayoutUtils.DrawButtonGroups(ember.GetType(), targets);;
         }
 
         protected override void OnHeaderGUI()
@@ -191,7 +194,7 @@ namespace EmberAI.Editor
             serializedObject.ApplyModifiedProperties();
         }
 
-        private void DrawButtons()
+        private void DrawDefaultButtons()
         {
             EditorLayoutUtils.BeginRows();
            
@@ -228,6 +231,58 @@ namespace EmberAI.Editor
             
             GUI.enabled = true;*/
         }
+        
+        /// <summary>
+        /// Draws buttons for methods tagged with [ButtonGroup].
+        /// </summary>
+        private void DrawButtonGroups()
+        {
+            // Find all methods on this component with the attribute
+            var methods = ember.GetType()
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(m => m.GetCustomAttribute<ButtonGroupAttribute>() != null)
+                .ToArray();
+
+            if (methods.Length == 0)
+                return;
+
+            EditorGUILayout.Space(8);
+
+            // Group by GroupID
+            var groups = methods.GroupBy(m => m.GetCustomAttribute<ButtonGroupAttribute>().GroupID);
+
+            foreach (var group in groups)
+            {
+                // Label for this group
+                EditorGUILayout.LabelField(group.Key, EditorStyles.boldLabel);
+                EditorLayoutUtils.BeginRows();
+
+                int count = group.Count();
+                int col = 0;
+
+                foreach (var method in group)
+                {
+                    var attr = method.GetCustomAttribute<ButtonGroupAttribute>();
+                    float width = 1f / count;
+
+                    var content = new GUIContent(attr.Label, attr.Tooltip);
+                    if (GUI.Button(EditorLayoutUtils.GetButtonRect(0, width), content, EditorLayoutUtils.GetButtonStyle()))
+                    {
+                        // Invoke on all selected objects
+                        foreach (var obj in targets)
+                        {
+                            var beh = obj as EmberBehaviour;
+                            method.Invoke(beh, null);
+                        }
+                    }
+
+                    col++;
+                }
+
+                EditorGUILayout.Space(6);
+            }
+        }
+
         
         private void CacheProperties()
         {

@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using Core;
 using EmberAI.Attributes;
+using EmberAI.Attributes.EmberAI.Attributes;
 using EmberAI.Core;
+using EmberAI.Core.Util;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -73,6 +75,27 @@ public class AvatarConfig : BaseData
     [Tooltip("Extra local rotation to apply to each shoulder bone (in degrees), to pull the arms out.")]
     public Vector3 shoulderRollOffset = Vector3.zero;
 
+    [ButtonGroup("Debug", "Apply", "At runtime, will rebuild the Avatar and discover any matching instances to apply to.")]
+    private void ApplyUpdates()
+    {
+        if (Application.isPlaying)
+        {
+            GLBBehaviour target = FindFirstObjectByType<GLBBehaviour>();
+
+            if (target == null)
+            {
+                Debug.LogError("No GLB Behaviour found in scene");
+                
+                return;
+            }
+
+            string avatarOutputFolder = FileUtil.CombineWithDataPath(AvatarBuilder.OutputFolderName);
+            Avatar avatar = AvatarBuilder.Build(target.transform, target.avatarConfig, FileUtil.Combine(avatarOutputFolder, target.avatarConfig.name + ".asset"));
+            
+            target.SetHumanoidAvatar(avatar, false);
+        }
+    }
+    
 }
 
 
@@ -101,5 +124,8 @@ public class AvatarConfig : BaseData
     {
         public AvatarBoneID BoneID;
         public Vector3 rotation;
+        
+        [ReadOnly]
+        public Vector3 originalRotation;
     }
 }

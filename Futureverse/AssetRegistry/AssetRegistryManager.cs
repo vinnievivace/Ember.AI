@@ -192,14 +192,22 @@ namespace EmberAI.Futureverse.AssetRegistry
             
             foreach (AssetEdge edge in response.data.assets.edges)
             {
-                string tokenID = edge.node.tokenId;
-                string imagePath = edge.node.metadata.properties.image;
-                string glbPath = edge.node.metadata.properties.glb_url;
+                try
+                {
+                    string tokenID = edge.node.tokenId;
+                    string imagePath = edge.node.metadata.properties.image;
+                    string glbPath = edge.node.metadata.properties.glb_url;
 
-                // clumsy, but different collections have different metadata, so not really my clumsy!!
-                if (glbPath.IsEmptyString()) glbPath = edge.node.metadata.properties.model;
+                    // clumsy, but different collections have different metadata, so not really my clumsy!!
+                    if (glbPath.IsEmptyString()) glbPath = edge.node.metadata.properties.model;
                 
-                assets.Add(new AssetItem(tokenID, imagePath, glbPath));;
+                    assets.Add(new AssetItem(tokenID, imagePath, glbPath));
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("invalid meta data for token " + edge.node.tokenId + ", cannot add to asset list");
+                }
+                
             }
             
             OnAssetsLoaded?.Invoke(assets);

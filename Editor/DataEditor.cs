@@ -8,7 +8,7 @@ using UnityEngine;
 namespace EmberAI.Editor
 {
     /// <summary>
-    /// Custom Editor for <see cref="BaseData"/>. Inspired by BlockEditor!
+    /// Custom Editor for BaseData ScriptableObjects.
     /// </summary>
     [CustomEditor(typeof(BaseData), true)]
     public class DataEditor : UnityEditor.Editor
@@ -22,16 +22,16 @@ namespace EmberAI.Editor
             CacheProperties();
         }
 
-        
-
         public override void OnInspectorGUI()
         {
             _dataTarget = (BaseData)target;
-
             _dataTarget.Initialize();
-            
+
             DrawHeaderRow();
             DrawProperties();
+
+            // Render any [ButtonGroup] methods for BaseData
+            EditorLayoutUtils.DrawButtonGroups(target.GetType(), targets);
         }
 
         private void DrawHeaderRow()
@@ -39,23 +39,18 @@ namespace EmberAI.Editor
             int oldIndent = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
 
-            float headerHeight = 40f;
-            Rect rect = EditorGUILayout.GetControlRect(false, headerHeight, GUILayout.ExpandWidth(true));
+            float height = 40f;
+            Rect rect = EditorGUILayout.GetControlRect(false, height, GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(rect, EmberEditor.HeaderColor);
 
-            // Load logo
-
+            // Logo
             Texture2D logo = AssetDatabase.LoadAssetAtPath<Texture2D>(EmberEditor.GetLogoPath());
-
             if (logo == null)
-            {
                 logo = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/{EmberEditor.PackageName}/Logo.png");
-            }
-            
             if (logo != null)
             {
-                Rect texRect = new Rect(rect.x + 4, rect.y + 4, headerHeight - 8, headerHeight - 8);
-                GUI.DrawTexture(texRect, logo, ScaleMode.ScaleToFit);
+                Rect logoRect = new Rect(rect.x + 4, rect.y + 4, height - 8, height - 8);
+                GUI.DrawTexture(logoRect, logo, ScaleMode.ScaleToFit);
             }
 
             // Title
@@ -65,7 +60,7 @@ namespace EmberAI.Editor
                 normal = { textColor = Color.white },
                 alignment = TextAnchor.MiddleLeft
             };
-            Rect labelRect = new Rect(rect.x + headerHeight, rect.y, rect.width - headerHeight, rect.height);
+            Rect labelRect = new Rect(rect.x + height, rect.y, rect.width - height, rect.height);
             GUI.Label(labelRect, $"Data: {_dataTarget.name} ({_dataTarget.GetType().Name})", style);
 
             EditorGUI.indentLevel = oldIndent;
@@ -75,7 +70,7 @@ namespace EmberAI.Editor
         {
             serializedObject.Update();
 
-            // Draw grouped
+            // Draw grouped properties
             foreach (var kvp in _groupedProperties)
             {
                 EditorGUILayout.BeginVertical("box");
@@ -92,7 +87,7 @@ namespace EmberAI.Editor
                 EditorGUILayout.Space(4);
             }
 
-            // Draw ungrouped
+            // Draw ungrouped properties
             foreach (var prop in _ungroupedProperties)
                 EditorGUILayout.PropertyField(prop, true);
 
@@ -104,7 +99,7 @@ namespace EmberAI.Editor
             _groupedProperties = new Dictionary<string, List<SerializedProperty>>();
             _ungroupedProperties = new List<SerializedProperty>();
 
-            var iterator = serializedObject.GetIterator();
+            SerializedProperty iterator = serializedObject.GetIterator();
             if (!iterator.NextVisible(true))
                 return;
 

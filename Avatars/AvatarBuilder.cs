@@ -244,21 +244,48 @@ namespace EmberAI.Avatars
                 bone.SetParent(parent);
             }
         }
-
+        
         private static void ApplyBoneRotations(Transform target, AvatarConfig config)
         {
-            foreach (var rot in config.BoneRotations)
+            // store original roation for each mapped bone
+            foreach (BoneRetargetConfig boneRetarget in config.BoneMapping)
             {
-                var map = config.BoneMapping.Find(x => x.BoneID == rot.BoneID);
-                if (map == null) throw new Exception($"Bone rotation {rot.BoneID} has no mapping.");
+                BoneRotationConfig boneRotation = config.BoneRotations.Find(x => x.BoneID == boneRetarget.BoneID);
 
-                var t = target.FindChildTransform(map.target);
-                if (t == null)
+                if (boneRotation == null)
                 {
-                    Debug.LogError($"Missing bone '{map.target}' for rotation {rot.BoneID}.");
+                    boneRotation = new BoneRotationConfig {BoneID = boneRetarget.BoneID};
+                    
+                    config.BoneRotations.Add(boneRotation);
+                }
+                
+                Transform bone = target.FindChildTransform(boneRetarget.target);
+
+                if (boneRotation.originalRotation == Vector3.zero)
+                {
+                    boneRotation.rotation = bone.localEulerAngles;
+                    boneRotation.originalRotation = bone.localEulerAngles;
+                }
+                
+            }
+            
+            foreach (BoneRotationConfig boneRotation in config.BoneRotations)
+            {
+                BoneRetargetConfig map = config.BoneMapping.Find(x => x.BoneID == boneRotation.BoneID);
+                
+                if (map == null) throw new Exception($"Bone rotation {boneRotation.BoneID} has no mapping.");
+
+                Transform bone = target.FindChildTransform(map.target);
+                
+                if (bone == null)
+                {
+                    Debug.LogError($"Missing bone '{map.target}' for rotation {boneRotation.BoneID}.");
                     continue;
                 }
-                t.localEulerAngles += rot.rotation;
+                
+                if(boneRotation.originalRotation == Vector3.zero) boneRotation.originalRotation = bone.localEulerAngles;
+                
+                bone.localEulerAngles = boneRotation.rotation;
             }
         }
 

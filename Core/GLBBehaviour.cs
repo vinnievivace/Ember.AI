@@ -227,7 +227,7 @@ namespace EmberAI.Core
         }
 
         // At runtime the avatar is generated and can then be applied
-        private void SetHumanoidAvatar(Avatar avatar)
+        public void SetHumanoidAvatar(Avatar avatar, bool resetYPosition = true)
         {
             if(type != GLBType.Humanoid) throw new System.Exception("Avatar can only be set on humanoid GLB");
             
@@ -241,16 +241,19 @@ namespace EmberAI.Core
             transform.GetChild(0).localEulerAngles = avatarConfig.rotationOffset;
             
             // all very hacky. need to ensure new avatar not spawned below the ground.
-            CharacterControllerSystem controllerSystem  = gameObject.GetComponent<CharacterControllerSystem>();
-            CharacterController controller = gameObject.GetComponent<CharacterController>();
-            controller.center = new Vector3(0, avatarConfig.yOffset, 0);
-            controllerSystem.active = false;
+            if (resetYPosition)
+            {
+                CharacterControllerSystem controllerSystem  = gameObject.GetComponent<CharacterControllerSystem>();
+                CharacterController controller = gameObject.GetComponent<CharacterController>();
+                controller.center = new Vector3(0, avatarConfig.yOffset, 0);
+                controllerSystem.active = false;
             
-            transform.position = new Vector3(transform.position.x, transform.position.y + 5, transform.position.z);
+                transform.position = new Vector3(transform.position.x, transform.position.y + 5, transform.position.z);
             
-            Debug.Log(transform.name + " : " + transform.position);
+                Debug.Log(transform.name + " : " + transform.position);
             
-            CallbackManager.AddOneOff(this, 0.5f, () => { controllerSystem.active = true; });
+                CallbackManager.AddOneOff(this, 0.5f, () => { controllerSystem.active = true; });
+            }
         }
         
         #endregion

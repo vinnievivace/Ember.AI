@@ -1,43 +1,82 @@
 using EmberAI.Attributes;
 using EmberAI.Core;
 using EmberAI.UI;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace EmberAI.Avatars
 {
-    [RequireComponent(typeof(CharacterController), typeof(Animator))]
     public class CharacterControllerSystem : EmberBehaviour
     {
+        #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
+
+        #endregion
+
+        #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
+
+        #endregion
+
+        #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
+
         // Animator parameter hashes
-        private static readonly int SpeedHash       = Animator.StringToHash("Speed");
+        /*private static readonly int SpeedHash       = Animator.StringToHash("Speed");
         private static readonly int JumpHash        = Animator.StringToHash("Jump");
         private static readonly int GroundedHash    = Animator.StringToHash("Grounded");
         private static readonly int FreeFallHash    = Animator.StringToHash("FreeFall");
-        private static readonly int MotionSpeedHash = Animator.StringToHash("MotionSpeed");
+        private static readonly int MotionSpeedHash = Animator.StringToHash("MotionSpeed");*/
+        
+        private Transform _cameraTransform;
+        private float _verticalVelocity;
 
-        // Settings
         [BoxGroup("Settings"), SerializeField] 
         private CharacterSettings settings;
         
-        // State
+        [BoxGroup("Audio"), SerializeField] 
+        private float animationEventVolume = 1f;
+        
+        [BoxGroup("Audio"), SerializeField] 
+        private AudioClip footStep, footStepAlt, landJump;
+        
+        [BoxGroup("Components")] 
+        public BaseCharacterInput characterInput;
+        
+        [BoxGroup("Components"), SerializeField] 
+        private AvatarAnimator avatarAnimator;
+        
+        [BoxGroup("Components"), SerializeField] 
+        private CharacterController controller;
+        
+        [BoxGroup("Components"), SerializeField] 
+        private AudioSource audioSource;
+        
         [BoxGroup("State")] public bool active = true;
+    
+        #endregion
 
-        // Components
-        [BoxGroup("Components")] public BaseCharacterInput characterInput;
-        [BoxGroup("Components"), SerializeField] private Animator animator;
-        [BoxGroup("Components"), SerializeField] private CharacterController controller;
+        #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
-        // Runtime
-        private Transform cameraTransform;
-        private float verticalVelocity;
+        #endregion
 
-        #region Initialization
+        #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
+
+        #region Static .................................................................................................
+
+        #endregion
+
+        #region Inspector ..............................................................................................
+
+        #endregion
+
+        #region Initialization .........................................................................................
 
         public override void InitializeDependencies()
         {
             base.InitializeDependencies();
-            controller     = this.GetOrAddComponent<CharacterController>();
-            animator       = this.GetOrAddComponent<Animator>();
+            
+            controller = this.GetOrAddComponent<CharacterController>();
+            avatarAnimator = this.GetOrAddComponent<AvatarAnimator>();
+            audioSource = this.GetOrAddComponent<AudioSource>();
+            
             characterInput = GetComponent<BaseCharacterInput>();
             
             // Default capsule
@@ -57,13 +96,13 @@ namespace EmberAI.Avatars
 
         #endregion
 
-        #region MonoBehaviour
+        #region MonoBehaviours .........................................................................................
 
         protected override void OnAwake()
         {
             base.OnAwake();
-            cameraTransform = Camera.main?.transform;
-            if (cameraTransform == null)
+            _cameraTransform = Camera.main?.transform;
+            if (_cameraTransform == null)
                 Debug.LogError("No Camera.main found for direction calculation.");
         }
 
@@ -89,9 +128,9 @@ namespace EmberAI.Avatars
         }
         
         #endregion
-        
+
         #region General ................................................................................................
-        
+
         private void ApplyUpdates(float delta)
         {
             if (UIManager.Instance != null) active = !UIManager.Instance.UIInteraction;
@@ -114,16 +153,16 @@ namespace EmberAI.Avatars
             if (wasGrounded)
             {
                 // snap to ground
-                verticalVelocity = - settings.groundStick;
+                _verticalVelocity = - settings.groundStick;
                 
                 if (jumpRequested)
                 {
-                    verticalVelocity = settings.jumpForce;
+                    _verticalVelocity = settings.jumpForce;
                 }
             }
             else
             {
-                verticalVelocity += settings.gravity * delta;
+                _verticalVelocity += settings.gravity * delta;
             }
 
             Vector3 groundNormal = Vector3.up;
@@ -134,38 +173,52 @@ namespace EmberAI.Avatars
             }
 
             Vector3 horizontal = Vector3.ProjectOnPlane(moveDir.normalized * targetSpeed, groundNormal);
-            Vector3 velocity   = horizontal + Vector3.up * verticalVelocity;
+            Vector3 velocity   = horizontal + Vector3.up * _verticalVelocity;
 
             controller.Move(velocity * Time.deltaTime);
 
             bool isGroundedNow = controller.isGrounded;
             bool didJump       = jumpRequested && wasGrounded;
             
-            UpdateAnimator(isMoving, targetSpeed, didJump, isGroundedNow, moveInput.magnitude);
+            avatarAnimator.UpdateAnimatorParams(isMoving, targetSpeed, didJump, isGroundedNow, moveInput.magnitude, _verticalVelocity);
         }
         
         #endregion
         
-        #region Animation Events .......................................................................................
+         #region Animation Events .......................................................................................
         
+        [UsedImplicitly]
         private void OnFootstep(AnimationEvent animationEvent)
         {
-            /*if (animationEvent.animatorClipInfo.weight > 0.5f)
+            if(footStep == null && footStepAlt == null) return;
+
+            AudioClip footStepClip;
+            
+            if(footStep != null && footStepAlt != null)
             {
-                if (FootstepAudioClips.Length > 0)
-                {
-                    var index = Random.Range(0, FootstepAudioClips.Length);
-                    AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
-                }
-            }*/
+                footStepClip = Random.Range(0, 1) == 0 ? footStep : footStepAlt;
+            }
+            else if (footStep != null)
+            {
+                footStepClip = footStep;
+            }
+            else
+            {
+                footStepClip = footStepAlt;
+            }
+            
+            AudioSource.PlayClipAtPoint(footStepClip, transform.TransformPoint(controller.center), animationEventVolume);
         }
 
+        [UsedImplicitly]
         private void OnLand(AnimationEvent animationEvent)
         {
-            /*if (animationEvent.animatorClipInfo.weight > 0.5f && LandingAudioClip != null)
+            if(landJump == null) return;
+            
+            if (animationEvent.animatorClipInfo.weight > 0.5f && landJump != null)
             {
-                AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
-            }*/
+                AudioSource.PlayClipAtPoint(landJump, transform.TransformPoint(controller.center), animationEventVolume);
+            }
         }
         
         #endregion
@@ -174,8 +227,8 @@ namespace EmberAI.Avatars
 
         private Vector3 CalculateMoveDirection(Vector2 input)
         {
-            Vector3 fwd = cameraTransform.forward; fwd.y = 0; fwd.Normalize();
-            Vector3 right = cameraTransform.right; right.y = 0; right.Normalize();
+            Vector3 fwd = _cameraTransform.forward; fwd.y = 0; fwd.Normalize();
+            Vector3 right = _cameraTransform.right; right.y = 0; right.Normalize();
             return fwd * input.y + right * input.x;
         }
 
@@ -195,21 +248,6 @@ namespace EmberAI.Avatars
             return Vector3.up;
         }
 
-        private void UpdateAnimator(bool isMoving, float speed, bool jumped, bool isGrounded, float inputMag)
-        {
-            if (animator == null) return;
-
-            animator.SetFloat(SpeedHash,     isMoving ? speed : 0f);
-            animator.SetBool(JumpHash,       jumped);
-            animator.SetBool(GroundedHash,   isGrounded);
-
-            bool isFalling = !isGrounded && verticalVelocity < 0f;
-            animator.SetBool(FreeFallHash, isFalling);
-
-            float motionSpeed = isMoving ? inputMag : settings.idleAnimationSpeed;
-            animator.SetFloat(MotionSpeedHash, motionSpeed);
-        }
-
         private void ApplySettings()
         {
             if (settings == null)
@@ -217,16 +255,28 @@ namespace EmberAI.Avatars
                 Debug.LogError("CharacterSettings missing on CharacterControllerSystem.");
                 return;
             }
-            animator.runtimeAnimatorController = settings.animatorController;
-            animator.applyRootMotion             = settings.useRootMotion;
+            
+            avatarAnimator.InitializeAnimator(settings.animatorController, settings.useRootMotion);;
         }
 
-        public void ApplyAvatar(Avatar avatar)
+        public void ApplyAvatar(Avatar avatar, AvatarConfig config)
         {
-            animator.avatar                     = avatar;
-            animator.runtimeAnimatorController = settings.animatorController;
-            animator.Rebind();
+            avatarAnimator.SetAnimatorAvatar(avatar, config);
+            
+            if(config == null) return;
+
+            if (config.landJump != null) landJump = config.landJump;
+            if(config.footstep != null) footStep = config.footstep;
+            if(config.footstepAlt != null) footStepAlt = config.footstepAlt;
+            
+            
         }
+
+        #endregion
+
+        #region Event Handlers .........................................................................................
+
+        #endregion
 
         #endregion
     }

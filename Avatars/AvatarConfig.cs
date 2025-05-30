@@ -17,6 +17,18 @@ public class AvatarConfig : BaseData
     [Tooltip("Attempt to assign the correct Config based on the path / url")]
     public string nameHint;
         
+    [FormerlySerializedAs("leftFootstep")] [BoxGroup("Audio")]
+    public AudioClip footstep;
+
+    [FormerlySerializedAs("rightFootstep")] [BoxGroup("Audio")]
+    public AudioClip footstepAlt;
+
+    [BoxGroup("Audio")]
+    public AudioClip landJump;
+
+    [BoxGroup("Animation")]
+    public AnimationClip idle, walk, run, jumpStart, jumpLand, jumpLandWalk, jumpLandRun, inAir;
+    
     [BoxGroup("Root")]
     public string rootName;
 
@@ -57,11 +69,11 @@ public class AvatarConfig : BaseData
 
     [BoxGroup("Rig Settings")]
     [Tooltip("Twist bias for the upper legs (0–1).")]
-    public float upperLegTwist = 0.5f;
+    public float upperLegTwist = 0.7f;
 
     [BoxGroup("Rig Settings")]
     [Tooltip("Twist bias for the lower legs (0–1).")]
-    public float lowerLegTwist = 0.5f;
+    public float lowerLegTwist = 1f;
 
     [BoxGroup("Rig Settings")]
     [Tooltip("Foot spacing in meters.")]
@@ -74,7 +86,7 @@ public class AvatarConfig : BaseData
     [BoxGroup("Rig Settings")]
     [Tooltip("Extra local rotation to apply to each shoulder bone (in degrees), to pull the arms out.")]
     public Vector3 shoulderRollOffset = Vector3.zero;
-
+    
     [ButtonGroup("Debug", "Apply", "At runtime, will rebuild the Avatar and discover any matching instances to apply to.")]
     private void ApplyUpdates()
     {

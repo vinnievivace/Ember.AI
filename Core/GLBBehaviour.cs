@@ -231,7 +231,7 @@ namespace EmberAI.Core
         {
             if(type != GLBType.Humanoid) throw new System.Exception("Avatar can only be set on humanoid GLB");
             
-            gameObject.GetComponent<CharacterControllerSystem>().ApplyAvatar(avatar);
+            gameObject.GetComponent<CharacterControllerSystem>().ApplyAvatar(avatar, avatarConfig);
             
             // some avatars may have animations baked in, so we need to remove the legacy Animation component that gets attached.
             Animation animationComponent = gameObject.GetComponentInChildren<Animation>();

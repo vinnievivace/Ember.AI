@@ -39,7 +39,7 @@ namespace EmberAI.Futureverse.AssetRegistry
         
         public const string AlteredStateCollectionID = "7668:root:100452";
         
-        private const string GoblinCollectionID = "7668:root:3172";
+        public const string GoblinCollectionID = "7668:root:3172";
     	private const string AtemVehicleCollectionID = "7668:root:16484";
         private const string PBUnleashedID = "7668:root:17508";
     	private const string PBMouthCollectionID = "7668:root:18532";

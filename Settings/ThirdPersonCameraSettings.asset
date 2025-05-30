@@ -29,17 +29,17 @@ MonoBehaviour:
   followSpeed: 10
   rotationMode: 0
   rotationSpace: {fileID: 0}
-  rotationRange: {x: -20, y: 90}
+  rotationRange: {x: 0, y: 90}
   rotationSpeed: 5
   rotationDuration: 5
   nonMouseRotationModifier: 0.01
-  distance: 4.899981
+  distance: 8.099972
   minDistance: 2
   maxDistance: 10
   zoomSpeed: 0.1
   blockingLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 0
   blockingRadius: 1
   blockingSmoothTime: 0.1
   blockingOriginOffset: 0

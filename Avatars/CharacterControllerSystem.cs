@@ -49,7 +49,8 @@ namespace EmberAI.Avatars
         [BoxGroup("Components"), SerializeField] 
         private AudioSource audioSource;
         
-        [BoxGroup("State")] public bool active = true;
+        [BoxGroup("State")] 
+        public bool active = true;
     
         #endregion
 
@@ -109,6 +110,8 @@ namespace EmberAI.Avatars
         protected override void OnUpdate()
         {
             base.OnUpdate();
+            
+            avatarAnimator.active = active;
             
             if(settings.updateType == UpdateMode.Update) ApplyUpdates(Time.deltaTime);
         }
@@ -261,7 +264,7 @@ namespace EmberAI.Avatars
 
         public void ApplyAvatar(Avatar avatar, AvatarConfig config)
         {
-            avatarAnimator.SetAnimatorAvatar(avatar, config);
+            avatarAnimator.InitializeAvatar(avatar, config);
             
             if(config == null) return;
 

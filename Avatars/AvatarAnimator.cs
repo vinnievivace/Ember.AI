@@ -26,8 +26,17 @@ namespace EmberAI.Avatars
         private static readonly int FreeFallID    = Animator.StringToHash("FreeFall");
         private static readonly int MotionSpeedID = Animator.StringToHash("MotionSpeed");
         
+        [BoxGroup("Settings"), ReadOnly, SerializeField]
+        private CharacterSettings CharacterSettings;
+        
+        [BoxGroup("Settings"), ReadOnly, SerializeField]
+        private AvatarConfig avatarConfig;
+        
         [BoxGroup("Components"), SerializeField] 
         private Animator animator;
+        
+        [BoxGroup("State")] 
+        public bool active = true;
         
         [BoxGroup("Foot IK"), Tooltip("Maximum distance to raycast downward from each foot.")]
         public float raycastDistance = 1.5f;
@@ -49,8 +58,7 @@ namespace EmberAI.Avatars
         [BoxGroup("Foot IK"), Tooltip("Local offset outward from the thigh for hinting bend direction.")]
         public float kneeHintOutward = 0.1f;
         
-        [BoxGroup("Debug"), ReadOnly, SerializeField]
-        private CharacterSettings CharacterSettings;
+        
         
         #endregion
 
@@ -83,6 +91,22 @@ namespace EmberAI.Avatars
 
         #region MonoBehaviours .........................................................................................
 
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            
+            animator.enabled = active;
+        }
+
+        protected override void OnLateUpdate()
+        {
+            base.OnLateUpdate();
+            
+            if(avatarConfig == null || avatarConfig.shoulderXOffset == 0) return;
+            
+            AvatarBuilder.ApplyShoulderOffset(transform, avatarConfig);
+        }
+
         #endregion
 
         #region General ................................................................................................
@@ -95,8 +119,9 @@ namespace EmberAI.Avatars
             animator.applyRootMotion = settings.useRootMotion;
         }
 
-        public void SetAnimatorAvatar(Avatar avatar, AvatarConfig config)
+        public void InitializeAvatar(Avatar avatar, AvatarConfig config)
         {
+            avatarConfig = config;
             animator.avatar = avatar;
             
             AnimatorOverrideController overrideController = new AnimatorOverrideController(animator.runtimeAnimatorController);
@@ -154,7 +179,7 @@ namespace EmberAI.Avatars
 
         private void OnAnimatorIK(int layerIndex)
         {
-            Debug.Log("go");
+            if(!active) return;
 
             ApplyFootIK(AvatarIKGoal.LeftFoot, AvatarIKHint.LeftKnee);
             ApplyFootIK(AvatarIKGoal.RightFoot, AvatarIKHint.RightKnee);
@@ -166,8 +191,6 @@ namespace EmberAI.Avatars
             animator.SetIKRotationWeight(foot, ikWeight);
             animator.SetIKHintPositionWeight(kneeHint, kneeHintWeight);
             
-            Debug.Log(CharacterSettings.groundLayer + " : " + foot + " : " + kneeHint);
-
             Vector3 footPos = animator.GetIKPosition(foot);
             Quaternion footRot = animator.GetIKRotation(foot);
 

@@ -3,10 +3,8 @@ using EmberAI.Attributes;
 using EmberAI.Avatars;
 using GLTFast;
 using GLTFast.Logging;
-using GLTFast.Materials;
 using UnityEngine;
 using UnityEditor;
-using UnityEngine.UI;
 using AvatarBuilder = EmberAI.Avatars.AvatarBuilder;
 using FileUtil = EmberAI.Core.Util.FileUtil;
 
@@ -33,10 +31,9 @@ namespace EmberAI.Core
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        private static readonly int Special = Animator.StringToHash("Special");
-        
         private GameObject _loadedModel;
         private Task _loadTask;
+       
         
         [BoxGroup("Settings")]
         public string path;
@@ -47,11 +44,14 @@ namespace EmberAI.Core
         [BoxGroup("Settings")] 
         public bool saveToCache;
         
+        [BoxGroup("Components"), Tooltip("If Humanoid, full 3rd person controller system is enabled"), SerializeField]
+        private CharacterControllerSystem ControllerSystem;
+        
         [BoxGroup("Avatar")]
         public AvatarConfig avatarConfig;
         
         [BoxGroup("Debug")] 
-        public bool rebuildAvatar;
+        public bool rebuildAvatar, debugBoneRotations;
         
         #endregion
 
@@ -104,6 +104,20 @@ namespace EmberAI.Core
             if(path.IsEmptyString()) return;
 
             _loadTask = LoadGLBAsync(path);
+        }
+
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            
+            if(ControllerSystem) ControllerSystem.active = !debugBoneRotations;
+
+            // very rough, just a way to debug our bone rotations at runtime.
+            if (debugBoneRotations && _loadedModel != null)
+            {
+                AvatarBuilder.ApplyBoneRotations(transform, avatarConfig);
+                AvatarBuilder.ApplyShoulderOffset(transform, avatarConfig);
+            }
         }
 
         #endregion
@@ -171,6 +185,9 @@ namespace EmberAI.Core
                         SetHumanoidAvatar(avatar);
                     }
                 }
+                
+                // bit of a hack and can probably be removed.
+                AvatarBuilder.ApplyBoneRotations(transform, avatarConfig);
 
                 DispatchEvent(OnLoadComplete, path);
                 
@@ -208,20 +225,19 @@ namespace EmberAI.Core
         {
             if(type != GLBType.Humanoid) throw new System.Exception("HumanoidController can only be set on humanoid GLB");
             
-            CharacterControllerSystem controller = gameObject.GetOrAddComponent<CharacterControllerSystem>();
             KeyboardMouseInput input = gameObject.GetOrAddComponent<KeyboardMouseInput>();
             
-            controller.characterInput = input;
+            ControllerSystem = gameObject.GetOrAddComponent<CharacterControllerSystem>();
+            ControllerSystem.characterInput = input;
             
         }
 
         private void RemoveHumanoidController()
         {
-            CharacterControllerSystem controller = gameObject.GetComponent<CharacterControllerSystem>();
+            if(ControllerSystem == null) return;
             
-            if(controller == null) return;
+            ControllerSystem.DestroyDependencies();
             
-            controller.DestroyDependencies();
             this.RemoveComponent<CharacterControllerSystem>();
             
         }

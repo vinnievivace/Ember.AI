@@ -39,18 +39,7 @@ public class AvatarConfig : BaseData
     [BoxGroup("Root")]
     [Tooltip("Y-offset for your CharacterController collider center.")]
     public float yOffset = 0.5f;
-        
-    [BoxGroup("Bones")]
-    [FormerlySerializedAs("bones")] 
-    public List<BoneRetargetConfig> BoneMapping;
-
-    [BoxGroup("Bones")]
-    [FormerlySerializedAs("BoneReparenting2")] 
-    public List<BoneReparentConfig> BoneReparenting;
-        
-    [BoxGroup("Bones")] 
-    public List<BoneRotationConfig> BoneRotations;
-
+    
     [BoxGroup("Rig Settings")]
     [Tooltip("How much the arms are allowed to stretch to match your T-pose.")]
     public float armStretch = 0.05f;
@@ -84,30 +73,32 @@ public class AvatarConfig : BaseData
     public bool hasTranslationDoF = false;
 
     [BoxGroup("Rig Settings")]
-    [Tooltip("Extra local rotation to apply to each shoulder bone (in degrees), to pull the arms out.")]
-    public Vector3 shoulderRollOffset = Vector3.zero;
+    [Tooltip("If not Zero, an X Offset for the shoulders")]
+    public float shoulderXOffset;
+        
+    [BoxGroup("Bones")]
+    [FormerlySerializedAs("bones")] 
+    public List<BoneRetargetConfig> BoneMapping;
+
+    [BoxGroup("Bones")]
+    [FormerlySerializedAs("BoneReparenting2")] 
+    public List<BoneReparentConfig> BoneReparenting;
+        
+    [BoxGroup("Bones")] 
+    public List<BoneRotationConfig> BoneRotations;
     
-    [ButtonGroup("Debug", "Apply", "At runtime, will rebuild the Avatar and discover any matching instances to apply to.")]
-    private void ApplyUpdates()
+    [ButtonGroup("Debug", "Reset Rig Settings", "Reset Rig settings to HumanDescription defaults")]
+    private void ResetRigSettings()
     {
-        if (Application.isPlaying)
-        {
-            GLBBehaviour target = FindFirstObjectByType<GLBBehaviour>();
-
-            if (target == null)
-            {
-                Debug.LogError("No GLB Behaviour found in scene");
-                
-                return;
-            }
-
-            string avatarOutputFolder = FileUtil.CombineWithDataPath(AvatarBuilder.OutputFolderName);
-            Avatar avatar = AvatarBuilder.Build(target.transform, target.avatarConfig, FileUtil.Combine(avatarOutputFolder, target.avatarConfig.name + ".asset"));
-            
-            target.SetHumanoidAvatar(avatar, false);
-        }
+        armStretch = 0.05f;
+        legStretch = 0.05f;
+        upperArmTwist = 0.5f;
+        lowerArmTwist = 0.5f;
+        upperLegTwist = 0.7f;
+        lowerLegTwist = 1f;
+        feetSpacing = 0f;
+        hasTranslationDoF = false;
     }
-    
 }
 
 

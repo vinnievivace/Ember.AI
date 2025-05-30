@@ -94,9 +94,7 @@ namespace EmberAI.Avatars
             humanDescription.feetSpacing        = config.feetSpacing;
             humanDescription.hasTranslationDoF  = config.hasTranslationDoF;
 
-            // Optionally roll the shoulders outward
-            if (config.shoulderRollOffset != Vector3.zero)
-                ApplyShoulderRoll(root, config);
+            if (config.shoulderXOffset != 0) ApplyShoulderOffset(root, config);
 
             // Create and save the Avatar
             Avatar avatar;
@@ -245,9 +243,9 @@ namespace EmberAI.Avatars
             }
         }
         
-        private static void ApplyBoneRotations(Transform target, AvatarConfig config)
+        public static void ApplyBoneRotations(Transform target, AvatarConfig config)
         {
-            // store original roation for each mapped bone
+            // store original rotation for each mapped bone
             foreach (BoneRetargetConfig boneRetarget in config.BoneMapping)
             {
                 BoneRotationConfig boneRotation = config.BoneRotations.Find(x => x.BoneID == boneRetarget.BoneID);
@@ -289,19 +287,23 @@ namespace EmberAI.Avatars
             }
         }
 
-        private static void ApplyShoulderRoll(Transform root, AvatarConfig config)
+        public static void ApplyShoulderOffset(Transform root, AvatarConfig config)
         {
-            var leftMap  = config.BoneMapping.Find(b => b.BoneID == AvatarBoneID.LeftShoulder)?.target;
-            var rightMap = config.BoneMapping.Find(b => b.BoneID == AvatarBoneID.RightShoulder)?.target;
+            string leftMap  = config.BoneMapping.Find(b => b.BoneID == AvatarBoneID.LeftShoulder)?.target;
+            string rightMap = config.BoneMapping.Find(b => b.BoneID == AvatarBoneID.RightShoulder)?.target;
+            
             if (!string.IsNullOrEmpty(leftMap))
             {
-                var t = root.FindChildTransform(leftMap);
-                if (t != null) t.localEulerAngles += config.shoulderRollOffset;
+                Transform t = root.FindChildTransform(leftMap);
+                
+                if (t != null) t.localPosition = new Vector3(0 - config.shoulderXOffset, t.localPosition.y, t.localPosition.z);;
             }
+            
             if (!string.IsNullOrEmpty(rightMap))
             {
-                var t = root.FindChildTransform(rightMap);
-                if (t != null) t.localEulerAngles -= config.shoulderRollOffset;
+                Transform t = root.FindChildTransform(rightMap);
+                
+                if (t != null) t.localPosition = new Vector3(config.shoulderXOffset, t.localPosition.y, t.localPosition.z);;
             }
         }
 

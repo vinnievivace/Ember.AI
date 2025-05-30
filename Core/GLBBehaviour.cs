@@ -250,8 +250,6 @@ namespace EmberAI.Core
             
                 transform.position = new Vector3(transform.position.x, transform.position.y + 5, transform.position.z);
             
-                Debug.Log(transform.name + " : " + transform.position);
-            
                 CallbackManager.AddOneOff(this, 0.5f, () => { controllerSystem.active = true; });
             }
         }

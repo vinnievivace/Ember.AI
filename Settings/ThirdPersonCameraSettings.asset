@@ -33,14 +33,14 @@ MonoBehaviour:
   rotationSpeed: 5
   rotationDuration: 5
   nonMouseRotationModifier: 0.01
-  distance: 6.0999904
+  distance: 4.899981
   minDistance: 2
   maxDistance: 10
   zoomSpeed: 0.1
   blockingLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   blockingRadius: 1
   blockingSmoothTime: 0.1
   blockingOriginOffset: 0
-  blockedOffset: 0.5
+  blockedOffset: 0.495

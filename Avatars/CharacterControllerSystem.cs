@@ -256,7 +256,7 @@ namespace EmberAI.Avatars
                 return;
             }
             
-            avatarAnimator.InitializeAnimator(settings.animatorController, settings.useRootMotion);;
+            avatarAnimator.InitializeAnimator(settings);;
         }
 
         public void ApplyAvatar(Avatar avatar, AvatarConfig config)

@@ -8,7 +8,7 @@ namespace EmberAI.Avatars
     public class CharacterSettings : BaseData
     {
         [BoxGroup("Movement")]
-        public EmberBehaviour.UpdateMode updateType = EmberBehaviour.UpdateMode.FixedUpdate;
+        public EmberBehaviour.UpdateMode updateMode = EmberBehaviour.UpdateMode.FixedUpdate;
         
         [BoxGroup("Movement")]
         public float walkSpeed = 3f;

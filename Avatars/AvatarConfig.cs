@@ -99,6 +99,18 @@ public class AvatarConfig : BaseData
         feetSpacing = 0f;
         hasTranslationDoF = false;
     }
+    
+    public string GetBoneTarget(AvatarBoneID boneID)
+    {
+        foreach (BoneRetargetConfig config in BoneMapping)
+        {
+            if (config.BoneID == boneID)
+            {
+                return config.target;
+            }
+        }
+        return null;
+    }
 }
 
 

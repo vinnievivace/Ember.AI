@@ -1,8 +1,10 @@
+using System;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using EmberAI.UI;
 using JetBrains.Annotations;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace EmberAI.Avatars
 {
@@ -44,6 +46,12 @@ namespace EmberAI.Avatars
         [BoxGroup("Audio"), SerializeField]
         private AudioClip footStep, footStepAlt, landJump;
 
+        [BoxGroup("Look At"), SerializeField]
+        private Transform lookAtTarget;
+        
+        [BoxGroup("Look At"), SerializeField]
+        private float lookAtSpeed = 8, lookAtHorizontalClamp = 60, lookAtVerticalClamp = 50;
+        
         [BoxGroup("Components")]
         public BaseCharacterInput characterInput;
 
@@ -58,20 +66,23 @@ namespace EmberAI.Avatars
 
         [BoxGroup("State")]
         public bool active = true;
+
+        [BoxGroup("Debug"), ReadOnly, SerializeField]
+        private Transform headTransform;
         
         #endregion
 
-        #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
+        #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////            
 
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
 
-        #region Static .................................................................................................
+        #region Static ................................................................................................
 
         #endregion
 
-        #region Inspector ..............................................................................................
+        #region Inspector ................................................................................................
 
         #endregion
 
@@ -103,7 +114,7 @@ namespace EmberAI.Avatars
         
         #endregion
 
-        #region MonoBehaviours .........................................................................................
+        #region MonoBehaviours ........................................................................................
 
         protected override void OnAwake()
         {
@@ -120,35 +131,70 @@ namespace EmberAI.Avatars
             
             avatarAnimator.active = active;
             
-            if (settings.updateType == UpdateMode.Update) ApplyUpdates(Time.deltaTime);
+            if (settings.updateMode == UpdateMode.Update) ApplyUpdates(Time.deltaTime);
         }
 
         protected override void OnLateUpdate()
         {
             base.OnLateUpdate();
             
-            if (settings.updateType == UpdateMode.LateUpdate) ApplyUpdates(Time.deltaTime);
+            if (settings.updateMode == UpdateMode.LateUpdate) ApplyUpdates(Time.deltaTime);
         }
         
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
             
-            if (settings.updateType == UpdateMode.FixedUpdate) ApplyUpdates(Time.fixedDeltaTime);
+            if (settings.updateMode == UpdateMode.FixedUpdate) ApplyUpdates(Time.fixedDeltaTime);
         }
-        
+
+        private void OnAnimatorIK(int layerIndex)
+        {
+            var anim = GetComponent<Animator>();
+            if (anim == null) return;
+            if (lookAtTarget == null || headTransform == null) return;
+            
+            // Calculate world direction from head to target
+            Vector3 worldDir = lookAtTarget.position - headTransform.position;
+            if(worldDir.sqrMagnitude < 0.0001f) return;
+
+            // Convert to head's local space
+            Transform headBone = anim.GetBoneTransform(HumanBodyBones.Head);
+            if (headBone == null) return;
+            Quaternion headRot = headBone.rotation;
+            Vector3 localDir = Quaternion.Inverse(headRot) * worldDir.normalized;
+
+            // Compute local Euler angles
+            Vector3 localEuler = Quaternion.LookRotation(localDir, Vector3.up).eulerAngles;
+            localEuler.x = (localEuler.x > 180f) ? localEuler.x - 360f : localEuler.x;
+            localEuler.y = (localEuler.y > 180f) ? localEuler.y - 360f : localEuler.y;
+
+            // Clamp within horizontal and vertical angles
+            float clampedYaw   = Mathf.Clamp(localEuler.y, -lookAtHorizontalClamp, lookAtHorizontalClamp);
+            float clampedPitch = Mathf.Clamp(localEuler.x, -lookAtVerticalClamp,   lookAtVerticalClamp);
+
+            // Build target local rotation
+            Quaternion targetLocal = Quaternion.Euler(clampedPitch, clampedYaw, 0f);
+
+            // Apply directly via Animator IK to override animation
+            anim.SetBoneLocalRotation(HumanBodyBones.Head, targetLocal);
+        }
+
         #endregion
 
         #region General ................................................................................................
 
         public void ApplyAvatar(Avatar avatar, AvatarConfig config)
         {
-            avatarAnimator.InitializeAvatar(avatar, config);
             if (config == null) return;
+            
+            avatarAnimator.InitializeAvatar(avatar, config);
 
             if (config.landJump    != null) landJump    = config.landJump;
             if (config.footstep    != null) footStep    = config.footstep;
             if (config.footstepAlt != null) footStepAlt = config.footstepAlt;
+
+            headTransform = transform.FindChildTransform(config.GetBoneTarget(AvatarBoneID.Head));
         }
         
         private void ApplySettings()
@@ -160,7 +206,7 @@ namespace EmberAI.Avatars
             }
             avatarAnimator.InitializeAnimator(settings);
         }
-        
+
         private void ApplyUpdates(float delta)
         {
             if (UIManager.Instance != null) active = !UIManager.Instance.UIInteraction;
@@ -278,7 +324,7 @@ namespace EmberAI.Avatars
         }
         
         #endregion
-        
+
         #region Animation Events .......................................................................................
 
         [UsedImplicitly]
@@ -299,8 +345,7 @@ namespace EmberAI.Avatars
             if (e.animatorClipInfo.weight > 0.5f) AudioSource.PlayClipAtPoint(landJump, transform.TransformPoint(controller.center), animationEventVolume);
         }
 
-
-        #region Event Handlers .........................................................................................
+        #region Event Handlers .................................................................................................
 
         #endregion
 

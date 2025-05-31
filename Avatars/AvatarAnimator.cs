@@ -157,21 +157,29 @@ namespace EmberAI.Avatars
             
         }
         
-        public void UpdateAnimatorParams(bool isMoving, float speed, bool jumped, bool isGrounded, float inputMag, float verticalVelocity)
+        public void UpdateAnimatorParams(float currentSpeed, float maxSpeed, bool jumped, bool isGrounded, float verticalVelocity)
         {
             if (animator == null) return;
 
-            animator.SetFloat(SpeedID, isMoving ? speed : 0f);
+            // 1) SPEED PARAMETER: zero when idle, otherwise actual speed
+            bool isMoving = currentSpeed > 0.001f;
+            
+            animator.SetFloat(SpeedID, isMoving ? currentSpeed : 0f);
+
+            // 2) JUMP / GROUNDED / FREEFALL
+            bool isFalling = !isGrounded && verticalVelocity < 0f;
+            
             animator.SetBool(JumpID, jumped);
             animator.SetBool(GroundedID, isGrounded);
-
-            bool isFalling = !isGrounded && verticalVelocity < 0f;
             animator.SetBool(FreeFallID, isFalling);
 
-            float motionSpeed = isMoving ? inputMag : 1;
+            // 3) MOTION SPEED: If moving, use (currentSpeed / maxSpeed) so the walk/run blend matches actual speed.
+            // If fully stopped, set to 1 so Idle plays at normal rate.
+            float motionSpeed = isMoving && maxSpeed > 0f ? Mathf.Clamp01(currentSpeed / maxSpeed) : 1f;
             
             animator.SetFloat(MotionSpeedID, motionSpeed);
         }
+
         
         #endregion
         

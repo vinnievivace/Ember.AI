@@ -22,6 +22,12 @@ namespace EmberAI.Avatars
         [BoxGroup("Movement")]
         [Tooltip("Degrees per second to turn toward movement direction")]
         public float rotationSpeed = 720;
+        
+        [BoxGroup("Movement"), Tooltip("Units/sec to ramp up to target speed.")]
+        public float accelerationSpeed = 15f;
+
+        [BoxGroup("Movement"), Tooltip("Seconds to ramp from stop‐speed → 0.")]
+        public float decelerationTime = 0.5f;
 
         [BoxGroup("Movement")]
         [InspectorText, SerializeField]

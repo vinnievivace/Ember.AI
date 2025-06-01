@@ -28,6 +28,8 @@ namespace EmberAI
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
+        public string Documentation { get; protected set; }
+        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,6 +40,15 @@ namespace EmberAI
 
         #region Inspector ..............................................................................................
 
+        #endregion
+        
+        #region Editor / Documentation .................................................................................
+
+        public virtual string GetDocumentation()
+        {
+            return "";
+        }
+        
         #endregion
 
         #region Initialization .........................................................................................

@@ -11,11 +11,11 @@ public class CenteredPopup : EditorWindow
 
     public static void Show(string title, string message)
     {
-        var popup = CreateInstance<CenteredPopup>();
+        CenteredPopup popup = CreateInstance<CenteredPopup>();
+        
         popup.titleContent = new GUIContent(title);
         popup._message = message;
 
-        // centre over main editor window
         Rect main = EditorGUIUtility.GetMainWindowPosition();
         popup.position = new Rect(
             main.x + (main.width  - WIDTH)  * 0.5f,
@@ -26,26 +26,20 @@ public class CenteredPopup : EditorWindow
         popup.ShowPopup();
     }
 
-    void OnGUI()
+    private void OnGUI()
     {
-        // — Header Bar —
-        var headerRect = new Rect(0, 0, position.width, 24);
+        Rect headerRect = new Rect(0, 0, position.width, 24);
+        
         EditorGUI.DrawRect(headerRect, HeaderColor);
-        // draw centered title
-        var titleStyle = new GUIStyle(EditorStyles.boldLabel)
-        {
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = HeaderTextColor }
-        };
+        
+        GUIStyle titleStyle = new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleCenter, normal = { textColor = HeaderTextColor } };
+        
         GUI.Label(headerRect, titleContent.text, titleStyle);
-
-        // — Body —
-        GUILayout.Space(28);  // leave room for header
+        GUILayout.Space(28);  
         GUILayout.Label(_message, EditorStyles.wordWrappedLabel);
-
-        // — Footer (Close) —
+       
         GUILayout.FlexibleSpace();
-        if (GUILayout.Button("Close", GUILayout.Height(24)))
-            Close();
+        
+        if (GUILayout.Button("Close", GUILayout.Height(24))) Close();
     }
 }

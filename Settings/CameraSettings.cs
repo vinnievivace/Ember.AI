@@ -7,8 +7,8 @@ using UnityEngine.Serialization;
 
 namespace EmberAI.Settings
 {
-    [CreateAssetMenu(fileName = "ThirdPersonCameraSettings", menuName = EmberAISystem.MenuPath +"/Settings/Camera/ThirdPersonCameraSettings")]
-    public class ThirdPersonCameraSettings : BaseData
+	[CreateAssetMenu(fileName = "ThirdPersonCameraSettings", menuName = EmberAISystem.MenuPath + "/Settings/ThirdPersonCameraSettings", order = 1)]
+	public class ThirdPersonCameraSettings : BaseData
     {
 	    [BoxGroup("General")]
 	    public ThirdPersonCamera.UpdateMode updateMode = ThirdPersonCamera.UpdateMode.LateUpdate; 

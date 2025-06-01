@@ -70,8 +70,11 @@ namespace EmberAI.Avatars
         [BoxGroup("Debug"), ReadOnly, SerializeField]
         private Transform headTransform;
         
-        // New: store the current IK local rotation override for head:
+        // Store the current IK local rotation override for head:
         private Quaternion _headIKRotation = Quaternion.identity;
+
+        // Buffer for jump input so it isn't lost mid‐air
+        private bool _jumpRequestedCached = false;
         
         #endregion
 
@@ -125,7 +128,8 @@ namespace EmberAI.Avatars
             
             _cameraTransform = Camera.main?.transform;
             
-            if (_cameraTransform == null) Debug.LogError("[CCS] No Camera.main found.");
+            if (_cameraTransform == null) 
+                Debug.LogError("[CCS] No Camera.main found.");
         }
 
         protected override void OnUpdate()
@@ -133,31 +137,42 @@ namespace EmberAI.Avatars
             base.OnUpdate();
             
             avatarAnimator.active = active;
-            
-            if (settings.updateMode == UpdateMode.Update) ApplyUpdates(Time.deltaTime);
+
+            // Buffer jump input here—only set flag, don't consume yet
+            if (settings.canJump && characterInput.JumpRequested())
+            {
+                _jumpRequestedCached = true;
+            }
+
+            if (settings.updateMode == UpdateMode.Update) 
+                ApplyUpdates(Time.deltaTime);
         }
 
         protected override void OnLateUpdate()
         {
             base.OnLateUpdate();
             
-            if (settings.updateMode == UpdateMode.LateUpdate) ApplyUpdates(Time.deltaTime);
+            if (settings.updateMode == UpdateMode.LateUpdate) 
+                ApplyUpdates(Time.deltaTime);
         }
         
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
             
-            if (settings.updateMode == UpdateMode.FixedUpdate) ApplyUpdates(Time.fixedDeltaTime);
+            if (settings.updateMode == UpdateMode.FixedUpdate) 
+                ApplyUpdates(Time.fixedDeltaTime);
         }
 
         private void OnAnimatorIK(int layerIndex)
         {
-            if (avatarAnimator == null || lookAtTarget == null || headTransform == null) return;
+            if (avatarAnimator == null || lookAtTarget == null || headTransform == null) 
+                return;
             
             // Calculate world direction from head to target
             Vector3 worldDir = lookAtTarget.position - headTransform.position;
-            if(worldDir.sqrMagnitude < 0.0001f) return;
+            if (worldDir.sqrMagnitude < 0.0001f) 
+                return;
 
             // Convert to head's local space
             Quaternion headRot = headTransform.rotation;
@@ -170,21 +185,18 @@ namespace EmberAI.Avatars
 
             // Clamp within horizontal and vertical angles
             float clampedYaw   = Mathf.Clamp(localEuler.y, -lookAtHorizontalClamp, lookAtHorizontalClamp);
-            float clampedPitch = Mathf.Clamp(localEuler.x, -lookAtVerticalClamp,   lookAtVerticalClamp);
+            float clampedPitch = Mathf.Clamp(localEuler.x, -lookAtVerticalClamp, lookAtVerticalClamp);
             
-            // Check within clamps
             bool withinYaw   = Math.Abs(localEuler.y) <= lookAtHorizontalClamp;
             bool withinPitch = Math.Abs(localEuler.x) <= lookAtVerticalClamp;
 
             Quaternion targetLocal;
             if (withinYaw && withinPitch)
             {
-                // Build target local rotation
                 targetLocal = Quaternion.Euler(clampedPitch, clampedYaw, 0f);
             }
             else
             {
-                // Out of range → target is identity (straight ahead)
                 targetLocal = Quaternion.identity;
             }
 
@@ -212,7 +224,6 @@ namespace EmberAI.Avatars
             if (config.footstepAlt != null) footStepAlt = config.footstepAlt;
 
             headTransform = transform.FindChildTransform(config.GetBoneTarget(AvatarBoneID.Head));
-            // Reset our IK rotation whenever avatar changes
             _headIKRotation = Quaternion.identity;
         }
         
@@ -228,23 +239,33 @@ namespace EmberAI.Avatars
 
         private void ApplyUpdates(float delta)
         {
-            if (UIManager.Instance != null) active = !UIManager.Instance.UIInteraction;
+            if (UIManager.Instance != null) 
+                active = !UIManager.Instance.UIInteraction;
 
             controller.enabled = active;
-            
-            if (!active) return;
+            if (!active) 
+                return;
 
-            Vector2 moveInput = characterInput.ReadMovementInput();
-            bool isRunning = characterInput.IsRunning();
-            bool isCrouching = settings.canCrouch && characterInput.IsCrouching();
-            bool jumpRequested = settings.canJump && characterInput.JumpRequested();
-            bool rawMoving = moveInput.sqrMagnitude > 0f;
+            Vector2 moveInput   = characterInput.ReadMovementInput();
+            bool    isRunning   = characterInput.IsRunning();
+            bool    isCrouching = settings.canCrouch && characterInput.IsCrouching();
+            bool    rawMoving   = moveInput.sqrMagnitude > 0f;
+
+            // Determine if we can consume the buffered jump this frame:
+            bool wasGrounded = controller.isGrounded;
+            bool jumpRequestedThisFrame = false;
+            if (settings.canJump && _jumpRequestedCached && wasGrounded)
+            {
+                jumpRequestedThisFrame = true;
+                _jumpRequestedCached = false;  // consume only when grounded
+            }
 
             float rawTarget = 0f;
-            
             if (rawMoving)
             {
-                rawTarget = isCrouching ? settings.crouchSpeed : (isRunning ? settings.runSpeed : settings.walkSpeed);
+                rawTarget = isCrouching 
+                    ? settings.crouchSpeed 
+                    : (isRunning ? settings.runSpeed : settings.walkSpeed);
                 
                 _lastRawTarget = rawTarget;
             }
@@ -257,12 +278,12 @@ namespace EmberAI.Avatars
                 _stopRawTarget    = _lastRawTarget;
             }
 
-            if (rawMoving && _decelerating) _decelerating = false;
+            if (rawMoving && _decelerating) 
+                _decelerating = false;
 
             _wasMovingLastFrame = rawMoving;
 
             Vector3 moveDir = CalculateMoveDirection(moveInput);
-            
             if (rawMoving)
             {
                 _lastMoveDirection = moveDir.normalized;
@@ -273,73 +294,93 @@ namespace EmberAI.Avatars
             if (_decelerating)
             {
                 _decelElapsed += delta;
-                
-                float t = settings.decelerationTime > 0f ? Mathf.Clamp01(_decelElapsed / settings.decelerationTime) : 1f;
+                float t = settings.decelerationTime > 0f 
+                    ? Mathf.Clamp01(_decelElapsed / settings.decelerationTime) 
+                    : 1f;
                 
                 _currentSpeed = Mathf.Lerp(_stopSpeed, 0f, t);
-
-                if (t >= 1f) _decelerating = false;
+                if (t >= 1f) 
+                    _decelerating = false;
             }
             else
             {
-                _currentSpeed = Mathf.MoveTowards(_currentSpeed, rawTarget, settings.accelerationSpeed * delta);
+                _currentSpeed = Mathf.MoveTowards(
+                    _currentSpeed, 
+                    rawTarget, 
+                    settings.accelerationSpeed * delta
+                );
             }
 
-            bool wasGrounded = controller.isGrounded;
-            
             if (wasGrounded)
             {
                 _verticalVelocity = -settings.groundStick;
-                
-                if (jumpRequested) _verticalVelocity = settings.jumpForce;
+                if (jumpRequestedThisFrame)
+                {
+                    _verticalVelocity = settings.jumpForce;
+                }
             }
             else
             {
                 _verticalVelocity += settings.gravity * delta;
             }
 
-            Vector3 appliedDirection = _decelerating ? _lastMoveDirection : (rawMoving ? moveDir.normalized : Vector3.zero);
+            Vector3 appliedDirection = _decelerating 
+                ? _lastMoveDirection 
+                : (rawMoving ? moveDir.normalized : Vector3.zero);
 
             // Project onto the slope
             Vector3 groundNormal = wasGrounded ? SampleGroundNormal() : Vector3.up;
             Vector3 horizontal   = Vector3.ProjectOnPlane(appliedDirection * _currentSpeed, groundNormal);
             Vector3 velocity     = horizontal + Vector3.up * _verticalVelocity;
-            
             controller.Move(velocity * delta);
 
             float maxSpeedForAnim = _decelerating ? _stopRawTarget : rawTarget;
-            bool isGroundedNow = controller.isGrounded;
-            bool jump = jumpRequested && wasGrounded;
-            bool crouch = isCrouching && isGroundedNow;
+            bool isGroundedNow   = controller.isGrounded;
+            bool jumpForAnim     = jumpRequestedThisFrame && wasGrounded;
+            bool crouchForAnim   = isCrouching && isGroundedNow;
 
-            avatarAnimator.UpdateAnimatorParams(_currentSpeed, maxSpeedForAnim, jump, crouch, isGroundedNow, _verticalVelocity);
+            avatarAnimator.UpdateAnimatorParams(
+                _currentSpeed, 
+                maxSpeedForAnim, 
+                jumpForAnim, 
+                crouchForAnim, 
+                isGroundedNow, 
+                _verticalVelocity
+            );
         }
         
         private Vector3 CalculateMoveDirection(Vector2 input)
         {
             Vector3 fwd   = _cameraTransform.forward; fwd.y = 0; fwd.Normalize();
             Vector3 right = _cameraTransform.right;   right.y = 0; right.Normalize();
-            
             return fwd * input.y + right * input.x;
         }
 
         private void RotateTowards(Vector3 direction)
         {
-            if (direction.sqrMagnitude < 0.001f) return;
-            
+            if (direction.sqrMagnitude < 0.001f) 
+                return;
+
             Quaternion target = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, target, settings.rotationSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation, 
+                target, 
+                settings.rotationSpeed * Time.deltaTime
+            );
         }
 
         private Vector3 SampleGroundNormal()
         {
             Vector3 origin = transform.position + Vector3.up * (controller.height * 0.5f);
-            
-            if (Physics.Raycast(origin, Vector3.down, out var hit, controller.height * 0.5f + 0.1f, settings.groundLayer))
+            if (Physics.Raycast(
+                    origin, 
+                    Vector3.down, 
+                    out RaycastHit hit, 
+                    controller.height * 0.5f + 0.1f, 
+                    settings.groundLayer))
             {
                 return hit.normal;
             }
-            
             return Vector3.up;
         }
         
@@ -352,25 +393,37 @@ namespace EmberAI.Avatars
         {
             if (footStep == null && footStepAlt == null) return;
             
-            AudioClip clip = (footStep != null && footStepAlt != null) ? (Random.value < 0.5f ? footStep : footStepAlt) : (footStep ?? footStepAlt);
+            AudioClip clip = (footStep != null && footStepAlt != null) 
+                ? (Random.value < 0.5f ? footStep : footStepAlt) 
+                : (footStep ?? footStepAlt);
             
-            AudioSource.PlayClipAtPoint(clip, transform.TransformPoint(controller.center), animationEventVolume);
+            AudioSource.PlayClipAtPoint(
+                clip, 
+                transform.TransformPoint(controller.center), 
+                animationEventVolume
+            );
         }
 
         [UsedImplicitly]
         private void OnLand(AnimationEvent e)
         {
             if (landJump == null) return;
-            
-            if (e.animatorClipInfo.weight > 0.5f) AudioSource.PlayClipAtPoint(landJump, transform.TransformPoint(controller.center), animationEventVolume);
+            if (e.animatorClipInfo.weight > 0.5f)
+            {
+                AudioSource.PlayClipAtPoint(
+                    landJump, 
+                    transform.TransformPoint(controller.center), 
+                    animationEventVolume
+                );
+            }
         }
 
+        #endregion
+        
         #region Event Handlers .................................................................................................
 
         #endregion
 
-        #endregion
-        
         #endregion
 
     }

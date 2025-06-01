@@ -200,12 +200,10 @@ namespace EmberAI.Editor
            
             GUIContent loadButtonContent = new GUIContent("Documentation", "Opens documentation for the " + nameof(EmberBehaviour) + " component");
             GUIContent showDebug = new GUIContent("Debug", "Runtime Logs for this instance of " + nameof(EmberBehaviour));
-            //GUIContent connectButtonContent = new GUIContent("Connect", "Connect to the Readyverse Launcher Websocket");
-            //GUIContent disconnectButtonContent = new GUIContent("Disconnect", "Disconnect from the Readyverse Launcher Websocket");
-
+            
             if(GUI.Button(EditorLayoutUtils.GetButtonRect(0,0.5f), loadButtonContent, EditorLayoutUtils.GetButtonStyle()))
             {
-                CenteredPopup.Show("Coming soon", "soooooon.");
+                CenteredPopup.Show(ember.GetType().ToString(), ember.GetDocumentation());
             }
             
             GUI.enabled = Application.isPlaying;

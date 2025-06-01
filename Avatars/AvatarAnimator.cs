@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EmberAI.Attributes;
 using EmberAI.Core;
+using EmberAI.Envrionment;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -147,6 +148,9 @@ namespace EmberAI.Avatars
             
             animator.runtimeAnimatorController = overrideController;
             animator.Rebind();
+            
+            // HACK, need to refine, but want to include in AvatarSpotlight
+            HDEnvironmentManager.Instance.SetAvatar(this);
             
         }
         

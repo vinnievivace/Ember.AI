@@ -1,10 +1,11 @@
+using Core;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using UnityEngine;
 
 namespace EmberAI.Avatars
 {
-    [CreateAssetMenu(menuName = "Characters/Character Settings")]
+    [CreateAssetMenu(fileName = "CharacterSettings", menuName = EmberAISystem.MenuPath + "/Settings/CharacterSettings", order = 1)]
     public class CharacterSettings : BaseData
     {
         [BoxGroup("Movement")]

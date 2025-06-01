@@ -52,5 +52,23 @@ namespace EmberAI.Core.Util
             
             return Input.GetKey(keyCode);
         }
+        
+        public static bool WasKeyPressed(KeyCode keyCode)
+        {
+            #if ENABLE_INPUT_SYSTEM
+            if (UseNewInputSystem && Keyboard.current != null)
+            {
+                // try to map the legacy KeyCode name to the new InputSystem Key enum
+                if (Enum.TryParse<Key>(keyCode.ToString(), out var newKey))
+                {
+                    KeyControl keyControl = Keyboard.current[newKey];
+                    
+                    if (keyControl != null) return keyControl.wasPressedThisFrame;
+                }
+            }
+            #endif
+            
+            return Input.GetKeyDown(keyCode);
+        }
     }
 }

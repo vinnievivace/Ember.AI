@@ -45,9 +45,6 @@ namespace EmberAI.Avatars
         [BoxGroup("Crouch")]
         public bool  canCrouch = true;
         
-        [BoxGroup("Crouch")]
-        public float crouchHeight = 1f;
-        
         [BoxGroup("Animation")]
         public RuntimeAnimatorController animatorController;
         

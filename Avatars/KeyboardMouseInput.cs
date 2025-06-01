@@ -75,7 +75,7 @@ public class KeyboardMouseInput : BaseCharacterInput
 
     public override bool JumpRequested()
     {
-        return InputUtil.IsKeyDown(jumpKey);
+        return InputUtil.WasKeyPressed(jumpKey);
     }
 
     public override bool IsRunning()

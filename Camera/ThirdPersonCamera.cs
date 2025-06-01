@@ -233,6 +233,7 @@ namespace EmberAI.Cameras
                 }
 
                 bool isKeyRot = false;
+                
                 if (InputUtil.IsKeyDown(Settings.rotateLeftKey))  { isKeyRot = true; targetRotation.x =  1; }
                 else if (InputUtil.IsKeyDown(Settings.rotateRightKey)) { isKeyRot = true; targetRotation.x = -1; }
                 if (InputUtil.IsKeyDown(Settings.rotateUpKey))    { isKeyRot = true; targetRotation.y =  1; }

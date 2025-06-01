@@ -14,16 +14,17 @@ namespace EmberAI.Avatars
 
         #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
 
-        public enum AnimatorState { Idle, Walk, Run, JumpStart, JumpLand, JumpLandWalk, JumpLandRun, InAir }
+        public enum AnimatorState { Idle, Walk, Run, JumpStart, JumpLand, JumpLandWalk, JumpLandRun, Crouch, InAir }
         
         #endregion
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        private static readonly int SpeedID       = Animator.StringToHash("Speed");
-        private static readonly int JumpID        = Animator.StringToHash("Jump");
-        private static readonly int GroundedID    = Animator.StringToHash("Grounded");
-        private static readonly int FreeFallID    = Animator.StringToHash("FreeFall");
+        private static readonly int SpeedID = Animator.StringToHash("Speed");
+        private static readonly int JumpID = Animator.StringToHash("Jump");
+        private static readonly int CrouchID = Animator.StringToHash("Crouch");
+        private static readonly int GroundedID = Animator.StringToHash("Grounded");
+        private static readonly int FreeFallID = Animator.StringToHash("FreeFall");
         private static readonly int MotionSpeedID = Animator.StringToHash("MotionSpeed");
         
         [BoxGroup("Settings"), ReadOnly, SerializeField]
@@ -64,6 +65,8 @@ namespace EmberAI.Avatars
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
+        public Animator Animator => animator;
+        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,6 +139,7 @@ namespace EmberAI.Avatars
             ApplyOverrideAnimation(config.jumpLand, AnimatorState.JumpLand, overrides);
             ApplyOverrideAnimation(config.jumpLandWalk, AnimatorState.JumpLandWalk, overrides);
             ApplyOverrideAnimation(config.jumpLandRun, AnimatorState.JumpLandRun, overrides);
+            ApplyOverrideAnimation(config.crouch, AnimatorState.Crouch, overrides);;
             ApplyOverrideAnimation(config.walk, AnimatorState.Walk, overrides);
             ApplyOverrideAnimation(config.run, AnimatorState.Run, overrides);
 
@@ -157,7 +161,7 @@ namespace EmberAI.Avatars
             
         }
         
-        public void UpdateAnimatorParams(float currentSpeed, float maxSpeed, bool jumped, bool isGrounded, float verticalVelocity)
+        public void UpdateAnimatorParams(float currentSpeed, float maxSpeed, bool jump, bool crouch, bool isGrounded, float verticalVelocity)
         {
             if (animator == null) return;
 
@@ -169,7 +173,8 @@ namespace EmberAI.Avatars
             // 2) JUMP / GROUNDED / FREEFALL
             bool isFalling = !isGrounded && verticalVelocity < 0f;
             
-            animator.SetBool(JumpID, jumped);
+            animator.SetBool(JumpID, jump);
+            animator.SetBool(CrouchID, crouch);
             animator.SetBool(GroundedID, isGrounded);
             animator.SetBool(FreeFallID, isFalling);
 

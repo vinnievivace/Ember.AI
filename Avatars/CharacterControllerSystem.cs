@@ -70,9 +70,12 @@ namespace EmberAI.Avatars
         [BoxGroup("Debug"), ReadOnly, SerializeField]
         private Transform headTransform;
         
+        // New: store the current IK local rotation override for head:
+        private Quaternion _headIKRotation = Quaternion.identity;
+        
         #endregion
 
-        #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////            
+        #region PROPERTIES //////////////////////////////////////////////////////////////////////////////////###########            
 
         #endregion
 
@@ -150,18 +153,14 @@ namespace EmberAI.Avatars
 
         private void OnAnimatorIK(int layerIndex)
         {
-            var anim = GetComponent<Animator>();
-            if (anim == null) return;
-            if (lookAtTarget == null || headTransform == null) return;
+            if (avatarAnimator == null || lookAtTarget == null || headTransform == null) return;
             
             // Calculate world direction from head to target
             Vector3 worldDir = lookAtTarget.position - headTransform.position;
             if(worldDir.sqrMagnitude < 0.0001f) return;
 
             // Convert to head's local space
-            Transform headBone = anim.GetBoneTransform(HumanBodyBones.Head);
-            if (headBone == null) return;
-            Quaternion headRot = headBone.rotation;
+            Quaternion headRot = headTransform.rotation;
             Vector3 localDir = Quaternion.Inverse(headRot) * worldDir.normalized;
 
             // Compute local Euler angles
@@ -172,12 +171,30 @@ namespace EmberAI.Avatars
             // Clamp within horizontal and vertical angles
             float clampedYaw   = Mathf.Clamp(localEuler.y, -lookAtHorizontalClamp, lookAtHorizontalClamp);
             float clampedPitch = Mathf.Clamp(localEuler.x, -lookAtVerticalClamp,   lookAtVerticalClamp);
+            
+            // Check within clamps
+            bool withinYaw   = Math.Abs(localEuler.y) <= lookAtHorizontalClamp;
+            bool withinPitch = Math.Abs(localEuler.x) <= lookAtVerticalClamp;
 
-            // Build target local rotation
-            Quaternion targetLocal = Quaternion.Euler(clampedPitch, clampedYaw, 0f);
+            Quaternion targetLocal;
+            if (withinYaw && withinPitch)
+            {
+                // Build target local rotation
+                targetLocal = Quaternion.Euler(clampedPitch, clampedYaw, 0f);
+            }
+            else
+            {
+                // Out of range → target is identity (straight ahead)
+                targetLocal = Quaternion.identity;
+            }
 
-            // Apply directly via Animator IK to override animation
-            anim.SetBoneLocalRotation(HumanBodyBones.Head, targetLocal);
+            // Smoothly interpolate stored IK rotation toward targetLocal
+            float factor = lookAtSpeed * Time.deltaTime;
+            Quaternion smoothedLocal = Quaternion.Slerp(_headIKRotation, targetLocal, factor);
+            _headIKRotation = smoothedLocal;
+
+            // Apply via Animator IK
+            avatarAnimator.Animator.SetBoneLocalRotation(HumanBodyBones.Head, smoothedLocal);
         }
 
         #endregion
@@ -195,6 +212,8 @@ namespace EmberAI.Avatars
             if (config.footstepAlt != null) footStepAlt = config.footstepAlt;
 
             headTransform = transform.FindChildTransform(config.GetBoneTarget(AvatarBoneID.Head));
+            // Reset our IK rotation whenever avatar changes
+            _headIKRotation = Quaternion.identity;
         }
         
         private void ApplySettings()
@@ -215,11 +234,11 @@ namespace EmberAI.Avatars
             
             if (!active) return;
 
-            Vector2 moveInput     = characterInput.ReadMovementInput();
-            bool    isRunning     = characterInput.IsRunning();
-            bool    isCrouching   = settings.canCrouch && characterInput.IsCrouching();
-            bool    jumpRequested = settings.canJump && characterInput.JumpRequested();
-            bool    rawMoving     = moveInput.sqrMagnitude > 0f;
+            Vector2 moveInput = characterInput.ReadMovementInput();
+            bool isRunning = characterInput.IsRunning();
+            bool isCrouching = settings.canCrouch && characterInput.IsCrouching();
+            bool jumpRequested = settings.canJump && characterInput.JumpRequested();
+            bool rawMoving = moveInput.sqrMagnitude > 0f;
 
             float rawTarget = 0f;
             
@@ -289,10 +308,11 @@ namespace EmberAI.Avatars
             controller.Move(velocity * delta);
 
             float maxSpeedForAnim = _decelerating ? _stopRawTarget : rawTarget;
-            bool isGroundedNow       = controller.isGrounded;
-            bool didJump             = jumpRequested && wasGrounded;
+            bool isGroundedNow = controller.isGrounded;
+            bool jump = jumpRequested && wasGrounded;
+            bool crouch = isCrouching && isGroundedNow;
 
-            avatarAnimator.UpdateAnimatorParams(_currentSpeed, maxSpeedForAnim, didJump, isGroundedNow, _verticalVelocity);
+            avatarAnimator.UpdateAnimatorParams(_currentSpeed, maxSpeedForAnim, jump, crouch, isGroundedNow, _verticalVelocity);
         }
         
         private Vector3 CalculateMoveDirection(Vector2 input)

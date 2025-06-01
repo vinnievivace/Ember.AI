@@ -27,7 +27,7 @@ public class AvatarConfig : BaseData
     public AudioClip landJump;
 
     [BoxGroup("Animation")]
-    public AnimationClip idle, walk, run, jumpStart, jumpLand, jumpLandWalk, jumpLandRun, inAir;
+    public AnimationClip idle, walk, run, jumpStart, jumpLand, jumpLandWalk, jumpLandRun, crouch, inAir;
     
     [BoxGroup("Root")]
     public string rootName;

@@ -29,13 +29,14 @@ namespace EmberAI.Avatars
         /// <param name="config">AvatarConfig containing bone mappings and rig settings.</param>
         /// <param name="assetPath">Path (in StreamingAssets) to save the generated Avatar asset.</param>
         /// <returns>The created Avatar, or null on failure.</returns>
-        public static Avatar Build(Transform target, AvatarConfig config, string assetPath)
+        public static void Build(Transform target, AvatarConfig config, string assetPath, Action<Avatar> onComplete)
         {
             // Validate inputs and mapping
             if (!IsValid(target, config))
             {
                 Debug.LogError("Cannot build Avatar. The target or config is invalid.");
-                return null;
+                
+                return;
             }
 
             // Apply any bone reparenting or manual rotations first
@@ -68,7 +69,7 @@ namespace EmberAI.Avatars
                 if (boneTransform == null)
                 {
                     Debug.LogError($"Bone '{boneConfig.BoneID}' (target '{boneConfig.target}') not found.");
-                    return null;
+                    return;
                 }
 
                 humanBones[i] = new HumanBone
@@ -110,7 +111,7 @@ namespace EmberAI.Avatars
             if (!avatar.isValid || !avatar.isHuman)
             {
                 Debug.LogError("Avatar creation failed. Please check bone mappings and hierarchy.");
-                return null;
+                return;
             }
 
             // Persist asset if in Editor
@@ -129,7 +130,8 @@ namespace EmberAI.Avatars
             target.rotation = originalRotation;
 
             Debug.Log($"Avatar successfully created and set for the target at '{assetPath}'.");
-            return avatar;
+            
+            onComplete?.Invoke(avatar);
         }
 
         #endregion

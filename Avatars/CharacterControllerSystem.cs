@@ -11,8 +11,17 @@ namespace EmberAI.Avatars
 {
     public class CharacterControllerSystem : EmberBehaviour
     {
-        #region FIELDS
+        #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 
+        #endregion
+
+        #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
+
+        #endregion
+
+        #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
+
+        private bool _avatarInitialized;
         private Transform _cameraTransform;
         private float     _verticalVelocity;
         
@@ -67,11 +76,30 @@ namespace EmberAI.Avatars
         public bool active = true;
 
         [BoxGroup("Debug"), ReadOnly, SerializeField]
+        private bool _hasInput;
+        
+        [BoxGroup("Debug"), ReadOnly, SerializeField]
         private Transform headTransform;
+        
+        #endregion
+
+        #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
+
+        public bool HasInput { get; private set; }
+        
+        #endregion
+
+        #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
+
+        #region Static .................................................................................................
 
         #endregion
 
-        #region INITIALIZATION
+        #region Inspector ..............................................................................................
+
+        #endregion
+
+        #region Initialization .........................................................................................
 
         public override void InitializeDependencies()
         {
@@ -100,10 +128,10 @@ namespace EmberAI.Avatars
             this.RemoveComponent<Animator>();
             this.RemoveComponent<BaseCharacterInput>();
         }
-
+        
         #endregion
 
-        #region MONOBEHAVIOURS
+        #region MonoBehaviours .........................................................................................
 
         protected override void OnAwake()
         {
@@ -121,30 +149,26 @@ namespace EmberAI.Avatars
             
             avatarAnimator.active = active;
 
+            _hasInput = HasInput;
+            
             // Buffer jump input here—only set flag, don't consume yet
-            if (settings.canJump && characterInput.JumpTriggered())
-            {
-                _jumpRequestedCached = true;
-            }
-
-            if (settings.updateMode == UpdateMode.Update) 
-                ApplyInputs(Time.deltaTime);
+            if (settings.canJump && characterInput.JumpTriggered()) _jumpRequestedCached = true;
+            
+            if (settings.updateMode == UpdateMode.Update) ApplyInputs(Time.deltaTime);
         }
 
         protected override void OnLateUpdate()
         {
             base.OnLateUpdate();
             
-            if (settings.updateMode == UpdateMode.LateUpdate) 
-                ApplyInputs(Time.deltaTime);
+            if (settings.updateMode == UpdateMode.LateUpdate) ApplyInputs(Time.deltaTime);
         }
         
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
             
-            if (settings.updateMode == UpdateMode.FixedUpdate) 
-                ApplyInputs(Time.fixedDeltaTime);
+            if (settings.updateMode == UpdateMode.FixedUpdate) ApplyInputs(Time.fixedDeltaTime);
         }
 
         private void OnAnimatorIK(int layerIndex)
@@ -191,10 +215,10 @@ namespace EmberAI.Avatars
             // Apply via Animator IK
             avatarAnimator.Animator.SetBoneLocalRotation(HumanBodyBones.Head, smoothedLocal);
         }
-
+        
         #endregion
 
-        #region GENERAL
+        #region General ................................................................................................
 
         public void ApplyAvatar(Avatar avatar, AvatarConfig config)
         {
@@ -208,6 +232,9 @@ namespace EmberAI.Avatars
 
             headTransform = transform.FindChildTransform(config.GetBoneTarget(AvatarBoneID.Head));
             _headIKRotation = Quaternion.identity;
+            
+            _avatarInitialized = true;
+            active = true;
         }
         
         private void ApplySettings()
@@ -226,13 +253,20 @@ namespace EmberAI.Avatars
 
         private void ApplyInputs(float delta)
         {
-            if (UIManager.Instance != null) 
-                active = !UIManager.Instance.UIInteraction;
+            // until Avatar is initialized, we can't do anything
+            if (!_avatarInitialized)
+            {
+                active = false;
+                controller.enabled = false;
+                return;
+            }
+            
+            if (UIManager.Instance != null) active = !UIManager.Instance.UIInteraction;
 
             controller.enabled = active;
-            if (!active) 
-                return;
-
+            
+            if (!active) return;
+            
             Vector2 moveInput   = characterInput.ReadMovementInput();
             bool    isRunning   = characterInput.IsRunning();
             bool    isCrouching = settings.canCrouch && characterInput.IsCrouching();
@@ -352,8 +386,10 @@ namespace EmberAI.Avatars
             state.verticalVelocity = _verticalVelocity;
 
             avatarAnimator.UpdateAnimatorState(state);
-        }
 
+            HasInput = state.currentSpeed != 0 || state.dance || state.jump || state.crouch;;
+        }
+        
         private Vector3 CalculateMoveDirection(Vector2 input)
         {
             Vector3 fwd   = _cameraTransform.forward; fwd.y = 0; fwd.Normalize();
@@ -389,39 +425,37 @@ namespace EmberAI.Avatars
         }
         
         #endregion
-
-        #region ANIMATION EVENTS
+        
+        #region Animation Events .......................................................................................
 
         [UsedImplicitly]
         private void OnFootstep(AnimationEvent e)
         {
             if (footStep == null && footStepAlt == null) return;
             
-            AudioClip clip = (footStep != null && footStepAlt != null) 
-                ? (Random.value < 0.5f ? footStep : footStepAlt) 
-                : (footStep ?? footStepAlt);
+            AudioClip clip = (footStep != null && footStepAlt != null) ? (Random.value < 0.5f ? footStep : footStepAlt) : (footStep ?? footStepAlt);
             
-            AudioSource.PlayClipAtPoint(
-                clip, 
-                transform.TransformPoint(controller.center), 
-                animationEventVolume
-            );
+            AudioSource.PlayClipAtPoint(clip, transform.TransformPoint(controller.center), animationEventVolume);
         }
 
         [UsedImplicitly]
         private void OnLand(AnimationEvent e)
         {
             if (landJump == null) return;
+            
             if (e.animatorClipInfo.weight > 0.5f)
             {
-                AudioSource.PlayClipAtPoint(
-                    landJump, 
-                    transform.TransformPoint(controller.center), 
-                    animationEventVolume
-                );
+                AudioSource.PlayClipAtPoint(landJump, transform.TransformPoint(controller.center), animationEventVolume);
             }
         }
 
         #endregion
+
+        #region Event Handlers .........................................................................................
+
+        #endregion
+
+        #endregion
+        
     }
 }

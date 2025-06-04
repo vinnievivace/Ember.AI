@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using EmberAI.Attributes;
 using EmberAI.Core;
@@ -28,6 +29,7 @@ namespace EmberAI.Avatars
         private static readonly int GroundedID = Animator.StringToHash("Grounded");
         private static readonly int FreeFallID = Animator.StringToHash("FreeFall");
         private static readonly int MotionSpeedID = Animator.StringToHash("MotionSpeed");
+        
         
         [BoxGroup("Settings"), ReadOnly, SerializeField]
         private CharacterSettings CharacterSettings;
@@ -60,8 +62,6 @@ namespace EmberAI.Avatars
         
         [BoxGroup("Foot IK"), Tooltip("Local offset outward from the thigh for hinting bend direction.")]
         public float kneeHintOutward = 0.1f;
-        
-        
         
         #endregion
 
@@ -103,13 +103,12 @@ namespace EmberAI.Avatars
             animator.enabled = active;
         }
 
-        protected override void OnLateUpdate()
+        private void OnAnimatorIK(int layerIndex)
         {
-            base.OnLateUpdate();
-            
-            if(avatarConfig == null || avatarConfig.shoulderXOffset == 0) return;
-            
-            AvatarBuilder.ApplyShoulderOffset(transform, avatarConfig);
+            if(!active) return;
+
+            ApplyFootIK(AvatarIKGoal.LeftFoot, AvatarIKHint.LeftKnee);
+            ApplyFootIK(AvatarIKGoal.RightFoot, AvatarIKHint.RightKnee);
         }
 
         #endregion
@@ -199,15 +198,7 @@ namespace EmberAI.Avatars
         #endregion
         
         #region Foot IK ................................................................................................
-
-        private void OnAnimatorIK(int layerIndex)
-        {
-            if(!active) return;
-
-            ApplyFootIK(AvatarIKGoal.LeftFoot, AvatarIKHint.LeftKnee);
-            ApplyFootIK(AvatarIKGoal.RightFoot, AvatarIKHint.RightKnee);
-        }
-
+  
         private void ApplyFootIK(AvatarIKGoal foot, AvatarIKHint kneeHint)
         {
             animator.SetIKPositionWeight(foot, ikWeight);
@@ -221,21 +212,17 @@ namespace EmberAI.Avatars
             {
                 // Target foot position & rotation aligned to ground normal
                 Vector3 targetPos = hit.point + Vector3.up * footHeightOffset;
-                Quaternion targetRot = Quaternion.LookRotation(
-                    Vector3.ProjectOnPlane(transform.forward, hit.normal),
-                    hit.normal
-                );
+                
+                Quaternion targetRot = Quaternion.LookRotation(Vector3.ProjectOnPlane(transform.forward, hit.normal), hit.normal);
 
                 // Apply IK position and rotation
                 animator.SetIKPosition(foot, Vector3.Lerp(footPos, targetPos, ikWeight));
                 animator.SetIKRotation(foot, Quaternion.Slerp(footRot, targetRot, ikWeight));
 
                 // Compute knee hint position based on thigh orientation
-                Transform thigh = animator.GetBoneTransform(
-                    foot == AvatarIKGoal.LeftFoot ? HumanBodyBones.LeftUpperLeg : HumanBodyBones.RightUpperLeg);
+                Transform thigh = animator.GetBoneTransform(foot == AvatarIKGoal.LeftFoot ? HumanBodyBones.LeftUpperLeg : HumanBodyBones.RightUpperLeg);
 
-                Vector3 hintDirection = (transform.forward * kneeHintForward) +
-                                         (transform.right   * (foot == AvatarIKGoal.LeftFoot ? -kneeHintOutward : kneeHintOutward));
+                Vector3 hintDirection = (transform.forward * kneeHintForward) + (transform.right   * (foot == AvatarIKGoal.LeftFoot ? -kneeHintOutward : kneeHintOutward));
 
                 Vector3 hintPos = thigh.position + hintDirection;
                 animator.SetIKHintPosition(kneeHint, hintPos);
@@ -249,7 +236,7 @@ namespace EmberAI.Avatars
         }
         
         #endregion
-
+        
         #region Event Handlers .........................................................................................
 
         #endregion

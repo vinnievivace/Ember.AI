@@ -33,7 +33,6 @@ namespace EmberAI.Core
 
         private GameObject _loadedModel;
         private Task _loadTask;
-       
         
         [BoxGroup("Settings")]
         public string path;
@@ -49,9 +48,6 @@ namespace EmberAI.Core
         
         [BoxGroup("Avatar")]
         public AvatarConfig avatarConfig;
-        
-        [BoxGroup("Debug")] 
-        public bool rebuildAvatar, debugBoneRotations;
         
         #endregion
 
@@ -104,20 +100,6 @@ namespace EmberAI.Core
             if(path.IsEmptyString()) return;
 
             _loadTask = LoadGLBAsync(path);
-        }
-
-        protected override void OnUpdate()
-        {
-            base.OnUpdate();
-            
-            if(ControllerSystem) ControllerSystem.active = !debugBoneRotations;
-
-            // very rough, just a way to debug our bone rotations at runtime.
-            if (debugBoneRotations && _loadedModel != null)
-            {
-                AvatarBuilder.ApplyBoneRotations(transform, avatarConfig);
-                AvatarBuilder.ApplyShoulderOffset(transform, avatarConfig);
-            }
         }
 
         #endregion
@@ -174,21 +156,12 @@ namespace EmberAI.Core
 
                 if (type == GLBType.Humanoid)
                 {
-                    Avatar avatar = LoadAvatar(avatarConfig);
+                    // can load cached avatar potentially, but for now its better to build each time... i think
+                    //Avatar avatar = LoadAvatar(avatarConfig);
 
-                    if (avatar == null || rebuildAvatar)
-                    {
-                        CreateAvatar();
-                    }
-                    else
-                    {
-                        SetHumanoidAvatar(avatar);
-                    }
+                    CreateAvatar();
                 }
                 
-                // bit of a hack and can probably be removed.
-                AvatarBuilder.ApplyBoneRotations(transform, avatarConfig);
-
                 DispatchEvent(OnLoadComplete, path);
                 
             }
@@ -212,9 +185,9 @@ namespace EmberAI.Core
         private void CreateAvatar()
         {
             string avatarOutputFolder = FileUtil.CombineWithDataPath(AvatarBuilder.OutputFolderName);
-            Avatar avatar = AvatarBuilder.Build(transform, avatarConfig, FileUtil.Combine(avatarOutputFolder, avatarConfig.name + ".asset"));
-
-            SetHumanoidAvatar(avatar);
+            string assetPath = FileUtil.Combine(avatarOutputFolder, avatarConfig.name + ".asset");
+            
+            AvatarBuilder.Build(transform, avatarConfig, assetPath, avatar => SetHumanoidAvatar(avatar));
         }
      
         #endregion

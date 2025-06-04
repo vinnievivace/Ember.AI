@@ -151,7 +151,7 @@ namespace EmberAI.Avatars
             animator.Rebind();
             
             // HACK, need to refine, but want to include in AvatarSpotlight
-            HDEnvironmentManager.Instance.ApplySpotLighting(this);
+            EnvironmentManager.Instance.ApplySpotLighting(this);
             
         }
         
@@ -217,7 +217,7 @@ namespace EmberAI.Avatars
             Vector3 footPos = animator.GetIKPosition(foot);
             Quaternion footRot = animator.GetIKRotation(foot);
 
-            if (Physics.Raycast(footPos + Vector3.up * raycastDistance, Vector3.down, out RaycastHit hit, raycastDistance * 2f, CharacterSettings.groundLayer))
+            if (Physics.Raycast(footPos + Vector3.up * raycastDistance, Vector3.down, out RaycastHit hit, raycastDistance * 2f, EnvironmentManager.Instance.GroundLayer))
             {
                 // Target foot position & rotation aligned to ground normal
                 Vector3 targetPos = hit.point + Vector3.up * footHeightOffset;

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace EmberAI.Envrionment
 {
     #if HDRP_ENABLED
-    public class HDEnvironmentManager : EmberSingleton<HDEnvironmentManager>
+    public class EnvironmentManager : EmberSingleton<EnvironmentManager>
     {
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 
@@ -18,9 +18,7 @@ namespace EmberAI.Envrionment
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
         [BoxGroup("Settings"), SerializeField]
-        private HDEnvironmentSettings Settings;
-
-        
+        private EnvironmentSettings Settings;
 
         [BoxGroup("Lighting"), SerializeField] 
         private Light sun, avatarSpot;
@@ -31,6 +29,12 @@ namespace EmberAI.Envrionment
 
         public LayerMask GroundLayer => Settings.GroundLayer;
         
+        public Light Sun => sun;
+        
+        public float ShadowStrength => Settings.shadowStrength;
+        
+        public Light AvatarSpot => avatarSpot;
+        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -40,13 +44,6 @@ namespace EmberAI.Envrionment
         #endregion
 
         #region Inspector ..............................................................................................
-
-        public override void InitializeDependencies()
-        {
-            base.InitializeDependencies();
-            
-            description = "Singleton for managing HDRP specific environmental settings, lighting etc";
-        }
 
         public override string GetDocumentation()
         {
@@ -64,6 +61,13 @@ namespace EmberAI.Envrionment
 
         #region Initialization .........................................................................................
 
+        public override void InitializeDependencies()
+        {
+            base.InitializeDependencies();
+            
+            description = "Singleton for managing environmental settings, lighting etc";
+        }
+        
         #endregion
 
         #region MonoBehaviours .........................................................................................
@@ -89,6 +93,8 @@ namespace EmberAI.Envrionment
                 
                 avatarSpot.transform.localPosition = new Vector3(0, Settings.avatarSpotYOffset, Settings.avatarSpotDistance);
                 avatarSpot.renderingLayerMask = Settings.AvatarLightLayer;
+                avatarSpot.useColorTemperature = true;
+                avatarSpot.colorTemperature = Settings.avatarSpotTemperature;
             }
         }
 
@@ -110,7 +116,7 @@ namespace EmberAI.Envrionment
                 renderer.renderingLayerMask = Settings.AvatarLightLayer;
             }
         }
-        
+
         #endregion
 
         #region Event Handlers .........................................................................................

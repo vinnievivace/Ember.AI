@@ -1,0 +1,17 @@
+{
+    "name": "EmberAI.HDRP",
+    "rootNamespace": "",
+    "references": [
+        "GUID:6c15e14a5544d41539bef66d3a6a758c",
+        "GUID:457756d89b35d2941b3e7b37b4ece6f1"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

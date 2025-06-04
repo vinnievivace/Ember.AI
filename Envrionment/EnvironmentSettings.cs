@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace EmberAI.Envrionment
 {
-    [CreateAssetMenu(fileName = "HDEnvironmentSettings", menuName = EmberAISystem.MenuPath + "/Settings/HDEnvironmentSettings", order = 1)]
-    public class HDEnvironmentSettings : BaseData
+    [CreateAssetMenu(fileName = "EnvironmentSettings", menuName = EmberAISystem.MenuPath + "/Settings/EnvironmentSettings", order = 1)]
+    public class EnvironmentSettings : BaseData
     {
        #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -14,17 +14,24 @@ namespace EmberAI.Envrionment
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        [BoxGroup("Ground"), SerializeField]
+        [BoxGroup("Ground")]
         public LayerMask GroundLayer;
+
+        [BoxGroup("Ground"), Tooltip("Limit Avatar ability to scale Ground/Terrain slopes")]
+        public int slopeLimit = 30;
         
         [BoxGroup("Sun")] 
         public int sunIntensity = 80500, sunTemperature = 5050;
         
-        [BoxGroup("AvatarSpot"), SerializeField] 
+        [BoxGroup("Sun")] 
+        [Range(0,1)]
+        public float shadowStrength = 0.5f;
+        
+        [BoxGroup("AvatarSpot")] 
         public RenderingLayerMask AvatarLightLayer;
         
         [BoxGroup("AvatarSpot")]
-        public int avatarSpotIntensity = 6500;
+        public int avatarSpotIntensity = 6500, avatarSpotTemperature = 5000;
 
         [BoxGroup("AvatarSpot")] 
         public float avatarSpotWidth = 1.5f, avatarSpotHeight = 5, avatarSpotDistance = 5, avatarSpotYOffset = 1.5f;

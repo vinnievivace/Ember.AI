@@ -1,6 +1,7 @@
 using System;
 using EmberAI.Attributes;
 using EmberAI.Core;
+using EmberAI.Envrionment;
 using EmberAI.UI;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -10,15 +11,7 @@ namespace EmberAI.Avatars
 {
     public class CharacterControllerSystem : EmberBehaviour
     {
-        #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
-
-        #endregion
-
-        #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #endregion
-
-        #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
+        #region FIELDS
 
         private Transform _cameraTransform;
         private float     _verticalVelocity;
@@ -75,24 +68,10 @@ namespace EmberAI.Avatars
 
         [BoxGroup("Debug"), ReadOnly, SerializeField]
         private Transform headTransform;
-        
-        #endregion
-
-        #region PROPERTIES //////////////////////////////////////////////////////////////////////////////////###########            
 
         #endregion
 
-        #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #region Static ................................................................................................
-
-        #endregion
-
-        #region Inspector ................................................................................................
-
-        #endregion
-
-        #region Initialization .........................................................................................
+        #region INITIALIZATION
 
         public override void InitializeDependencies()
         {
@@ -107,6 +86,10 @@ namespace EmberAI.Avatars
             controller.center = new Vector3(0f, 0.5f, 0f);
             controller.height = 1f;
 
+            // (You can set slopeLimit in the Inspector or here:
+            //  controller.slopeLimit = settings.slopeLimit; // if you expose it in CharacterSettings
+            
+
             ApplySettings();
         }
 
@@ -117,10 +100,10 @@ namespace EmberAI.Avatars
             this.RemoveComponent<Animator>();
             this.RemoveComponent<BaseCharacterInput>();
         }
-        
+
         #endregion
 
-        #region MonoBehaviours ........................................................................................
+        #region MONOBEHAVIOURS
 
         protected override void OnAwake()
         {
@@ -211,7 +194,7 @@ namespace EmberAI.Avatars
 
         #endregion
 
-        #region General ................................................................................................
+        #region GENERAL
 
         public void ApplyAvatar(Avatar avatar, AvatarConfig config)
         {
@@ -235,6 +218,10 @@ namespace EmberAI.Avatars
                 return;
             }
             avatarAnimator.InitializeAnimator(settings);
+
+            // If you want to drive slopeLimit from CharacterSettings, uncomment below:
+            // controller.slopeLimit = settings.slopeLimit;
+            // controller.stepOffset = settings.stepOffset; 
         }
 
         private void ApplyInputs(float delta)
@@ -266,7 +253,6 @@ namespace EmberAI.Avatars
             if (rawMoving)
             {
                 rawTarget = isCrouching ? settings.crouchSpeed : (isRunning ? settings.runSpeed : settings.walkSpeed);
-                
                 _lastRawTarget = rawTarget;
             }
 
@@ -325,27 +311,49 @@ namespace EmberAI.Avatars
                 _verticalVelocity += settings.gravity * delta;
             }
 
+            // ───────────── Enforce slopeLimit here ─────────────
             Vector3 appliedDirection = _decelerating ? _lastMoveDirection : (rawMoving ? moveDir.normalized : Vector3.zero);
 
-            // Project onto the slope
+            // Sample ground normal
             Vector3 groundNormal = wasGrounded ? SampleGroundNormal() : Vector3.up;
-            Vector3 horizontal   = Vector3.ProjectOnPlane(appliedDirection * _currentSpeed, groundNormal);
-            Vector3 velocity     = horizontal + Vector3.up * _verticalVelocity;
+            float slopeAngle = Vector3.Angle(groundNormal, Vector3.up);
+
+            Vector3 horizontal;
+
+            if (wasGrounded && slopeAngle > controller.slopeLimit)
+            {
+                // Too steep to climb: zero out horizontal movement so you don't ascend
+                horizontal = Vector3.zero;
+                
+                // Optionally, slide down if you want:
+                // Vector3 downSlopeDir = new Vector3(groundNormal.x, -groundNormal.y, groundNormal.z);
+                // horizontal = downSlopeDir.normalized * settings.slideSpeed; 
+                
+                // Also mark as not grounded if you want to start falling:
+                // wasGrounded = false;
+            }
+            else
+            {
+                // Project movement onto the plane of the ground normal
+                horizontal = Vector3.ProjectOnPlane(appliedDirection * _currentSpeed, groundNormal);
+            }
+
+            Vector3 velocity = horizontal + Vector3.up * _verticalVelocity;
             controller.Move(velocity * delta);
 
             AvatarAnimatorState state = new AvatarAnimatorState();
             
-            state.maxSpeed = _decelerating ? _stopRawTarget : rawTarget;
-            state.isGrounded   = controller.isGrounded;
-            state.jump     = jumpRequestedThisFrame;
-            state.crouch   = isCrouching && state.isGrounded;
-            state.dance = characterInput.IsDancing();
-            state.currentSpeed = _currentSpeed;
+            state.maxSpeed        = _decelerating ? _stopRawTarget : rawTarget;
+            state.isGrounded      = controller.isGrounded;
+            state.jump            = jumpRequestedThisFrame;
+            state.crouch          = isCrouching && state.isGrounded;
+            state.dance           = characterInput.IsDancing();
+            state.currentSpeed    = _currentSpeed;
             state.verticalVelocity = _verticalVelocity;
 
             avatarAnimator.UpdateAnimatorState(state);
         }
-        
+
         private Vector3 CalculateMoveDirection(Vector2 input)
         {
             Vector3 fwd   = _cameraTransform.forward; fwd.y = 0; fwd.Normalize();
@@ -373,8 +381,7 @@ namespace EmberAI.Avatars
                     origin, 
                     Vector3.down, 
                     out RaycastHit hit, 
-                    controller.height * 0.5f + 0.1f, 
-                    settings.groundLayer))
+                    controller.height * 0.5f + 0.1f, EnvironmentManager.Instance.GroundLayer))
             {
                 return hit.normal;
             }
@@ -383,7 +390,7 @@ namespace EmberAI.Avatars
         
         #endregion
 
-        #region Animation Events .......................................................................................
+        #region ANIMATION EVENTS
 
         [UsedImplicitly]
         private void OnFootstep(AnimationEvent e)
@@ -416,12 +423,5 @@ namespace EmberAI.Avatars
         }
 
         #endregion
-        
-        #region Event Handlers .................................................................................................
-
-        #endregion
-
-        #endregion
-
     }
 }

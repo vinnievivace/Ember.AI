@@ -40,9 +40,6 @@ namespace EmberAI.Avatars
         [BoxGroup("Jumping")]
         public float jumpForce = 7f;
         
-        [BoxGroup("Jumping")]
-        public float gravity = -9.81f;
-
         [BoxGroup("Crouch")]
         public bool  canCrouch = true;
         
@@ -55,10 +52,10 @@ namespace EmberAI.Avatars
         [BoxGroup("Animation"), Tooltip("Idle animation playback speed.")]     
         public float idleAnimationSpeed = 1f;
         
-        [BoxGroup("Ground"), Tooltip("Layers considered as ground.")]
-        public LayerMask groundLayer;
+        [BoxGroup("Gravity")]
+        public float gravity = -9.81f;
         
-        [BoxGroup("Ground"), Tooltip("Downward velocity when grounded to keep snapped.")] 
+        [BoxGroup("Gravity"), Tooltip("Downward velocity when grounded to keep snapped.")] 
         public float groundStick = 2f;
     }
 }

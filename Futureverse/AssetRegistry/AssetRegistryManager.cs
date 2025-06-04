@@ -205,9 +205,8 @@ namespace EmberAI.Futureverse.AssetRegistry
                 }
                 catch 
                 {
-                    Debug.LogError("invalid meta data for token " + edge.node.tokenId + ", cannot add to asset list");
+                    Log(LogLevel.Warning, "invalid meta data for token " + edge.node.tokenId + ", cannot add to asset list");
                 }
-                
             }
             
             OnAssetsLoaded?.Invoke(assets);

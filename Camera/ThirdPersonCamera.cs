@@ -2,7 +2,6 @@ using Core;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using EmberAI.Core.Util;
-using EmberAI.Envrionment;
 using EmberAI.Settings;
 using EmberAI.UI;
 using JetBrains.Annotations;
@@ -19,53 +18,32 @@ namespace EmberAI.Cameras
         private Vector3 _smoothPosition;
 
         // blocking & spring-arm
-        private LayerMask _groundLayer;
         private float _blockedDistance = 10f;
         private float _blockedDistanceV;
-
-        // clipping avoidance using spherecast
-        [BoxGroup("Settings"), SerializeField, Tooltip("Default camera distance from target.")]
-        private float defaultDistance = 5f;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Minimum distance to allow after spring-arm collision.")]
-        private float minDistance = 2f;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Maximum allowed camera distance.")]
-        private float maxDistance = 10f;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Radius for spherecast along spring-arm.")]
-        private float springSphereRadius = 0.5f;
-
-        // FOV adjustment
-        [BoxGroup("Settings"), SerializeField, Tooltip("Normal field of view.")]
-        private float normalFOV = 60f;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Increased FOV when close to geometry.")]
-        private float clippedFOV = 75f;
-        [BoxGroup("Settings"), SerializeField, Tooltip("Speed to transition FOV.")]
-        private float fovSmoothTime = 0.2f;
-        private float _currentFOVVelocity;
-
-        // debug ground collision
-        [BoxGroup("Debug"), SerializeField, Tooltip("Enable debug drawing for ground collisions.")]
-        private bool debugGroundCollision = false;
-        [BoxGroup("Debug"), SerializeField, ReadOnly, Tooltip("True when a ground collision is currently detected.")]
-        private bool GroundCollisionDetected;
-
+        
         // rotation & position targets
         private Quaternion _rotationForSpace = Quaternion.identity;
         private Quaternion _targetRotation   = Quaternion.identity;
         private Vector3   _targetPosition   = Vector3.zero;
         private Vector3   _lastUp;
 
-        private Camera _camera;
         private float  _cachedRotationSpeed;
+        private float _currentFOVVelocity;
 
-        [BoxGroup("Settings"), SerializeField]
-        protected Transform _target;
-
+        
         [BoxGroup("Settings"), SerializeField, OnValueChanged(nameof(OnChangeSettings))]
         protected ThirdPersonCameraSettings Settings;
 
-        [BoxGroup("Debug"), SerializeField, ReadOnly] [UsedImplicitly]
-        private bool LeftButtonDown, RightButtonDown;
-
+        [BoxGroup("Settings"), SerializeField]
+        protected Transform _target;
+        
+        [BoxGroup("Components"), SerializeField]
+        private Camera _camera;
+        
+        
+        [BoxGroup("Debug"), SerializeField, ReadOnly, Tooltip("True when a ground collision is currently detected.")]
+        private bool GroundCollisionDetected;
+        
         private float DistanceTarget { get; set; }
         public static bool InputDisabled { get; set; }
         private Vector3 MoveDirection  { get; set; }
@@ -89,22 +67,23 @@ namespace EmberAI.Cameras
         private void OnChangeSettings()
         {
             _cachedRotationSpeed = Settings.rotationSpeed;
-            defaultDistance = Mathf.Clamp(defaultDistance, minDistance, maxDistance);
+            Settings.defaultDistance = Mathf.Clamp(Settings.defaultDistance, Settings.minDistance, Settings.maxDistance);
         }
 
         public override void InitializeDependencies()
         {
             base.InitializeDependencies();
+            
             _camera = this.GetOrAddComponent<Camera>();
-            _camera.fieldOfView = normalFOV;
+            _camera.fieldOfView = Settings.normalFOV;
         }
 
         protected override void OnAwake()
         {
             base.OnAwake();
 
-            DistanceTarget      = defaultDistance;
-            _targetZoomDistance = defaultDistance;
+            DistanceTarget      = Settings.defaultDistance;
+            _targetZoomDistance = Settings.defaultDistance;
             _smoothPosition     = transform.position;
 
             Vector3 angles      = transform.eulerAngles;
@@ -128,8 +107,6 @@ namespace EmberAI.Cameras
             Cursor.lockState = Settings.lockCursor ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible   = !Settings.lockCursor;
 
-            _groundLayer = HDEnvironmentManager.Instance.GroundLayer;
-
             if (Settings.updateMode == UpdateMode.Update) UpdateTransform(Time.deltaTime);
         }
 
@@ -147,8 +124,7 @@ namespace EmberAI.Cameras
             base.OnLateUpdate();
             if (InputDisabled || _target == null) return;
 
-            if (_camera == null) _camera = Camera.main;
-
+            
             UpdateInput();
 
             if (Settings.updateMode == UpdateMode.LateUpdate)
@@ -157,8 +133,6 @@ namespace EmberAI.Cameras
 
         protected virtual void UpdateTransform(float deltaTime)
         {
-            if (!_camera.enabled) return;
-
             // 1) Compute target rotation
             CalculateTargetRotation(deltaTime);
             // 2) Compute target position (smoothed follow)
@@ -167,20 +141,18 @@ namespace EmberAI.Cameras
             // 3) Spring-arm: spherecast from target backward
             Vector3 pivot = _smoothPosition + Vector3.up * Settings.offset.y;
             Vector3 dir = (_targetRotation * -Vector3.forward);
-            float desiredDist = Mathf.Clamp(DistanceTarget, minDistance, maxDistance);
+            float desiredDist = Mathf.Clamp(DistanceTarget, Settings.minDistance, Settings.maxDistance);
             Vector3 castOrigin = pivot;
-            float castDistance = desiredDist + springSphereRadius;
+            float castDistance = desiredDist + Settings.blockingDetectionRadius;
 
             bool hitSomething = false;
             float hitDist = desiredDist;
             
+            if(Settings.BlockingLayers == 0) Debug.LogError("No ground layers set, ground collision will not work.");
             
-            
-            if(_groundLayer == 0) Debug.LogError("No ground layers set, ground collision will not work.");
-            
-            if (Physics.SphereCast(castOrigin, springSphereRadius, dir, out RaycastHit hitInfo, castDistance, _groundLayer))
+            if (Physics.SphereCast(castOrigin, Settings.blockingDetectionRadius, dir, out RaycastHit hitInfo, castDistance, Settings.BlockingLayers))
             {
-                hitDist = hitInfo.distance - springSphereRadius;
+                hitDist = hitInfo.distance - Settings.blockingDetectionRadius;
                 _blockedDistance = Mathf.SmoothDamp(_blockedDistance, hitDist, ref _blockedDistanceV, 0.05f);
                 hitSomething = true;
             }
@@ -189,12 +161,12 @@ namespace EmberAI.Cameras
                 _blockedDistance = Mathf.SmoothDamp(_blockedDistance, desiredDist, ref _blockedDistanceV, 0.05f);
             }
 
-            float finalDistance = Mathf.Clamp(_blockedDistance, minDistance, desiredDist);
+            float finalDistance = Mathf.Clamp(_blockedDistance, Settings.minDistance, desiredDist);
             _targetPosition = pivot + dir * finalDistance;
 
             // 4) FOV adjustment if too close
-            float tFOV = (hitSomething && finalDistance < desiredDist - 0.1f) ? clippedFOV : normalFOV;
-            _camera.fieldOfView = Mathf.SmoothDamp(_camera.fieldOfView, tFOV, ref _currentFOVVelocity, fovSmoothTime);
+            float tFOV = (hitSomething && finalDistance < desiredDist - 0.1f) ? Settings.blockedFOV : Settings.normalFOV;
+            _camera.fieldOfView = Mathf.SmoothDamp(_camera.fieldOfView, tFOV, ref _currentFOVVelocity, Settings.FOVSmoothTime);
 
             // 5) Track ground collision for debug
             GroundCollisionDetected = hitSomething;
@@ -203,25 +175,10 @@ namespace EmberAI.Cameras
             transform.rotation = _targetRotation;
             transform.position = _targetPosition;
 
-            // 7) Debug drawing
-            if (debugGroundCollision)
-            {
-                Debug.DrawLine(castOrigin, castOrigin + dir * castDistance, Color.red);
-            }
+            
         }
 
-        private void OnDrawGizmos()
-        {
-            if (!debugGroundCollision || _camera == null || _target == null) return;
-            Color forSphere = GroundCollisionDetected ? Color.yellow : Color.green;
-            Gizmos.color = forSphere;
-            Gizmos.DrawWireSphere(_targetPosition, springSphereRadius);
-
-            Vector3 pivot = _smoothPosition + Vector3.up * Settings.offset.y;
-            Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
-            Gizmos.DrawSphere(pivot, springSphereRadius);
-        }
-
+        [UsedImplicitly]
         public void SetRotationMode(RotationMode mode)
         {
             if (mode == Settings.rotationMode) return;
@@ -268,9 +225,9 @@ namespace EmberAI.Cameras
             if (scroll >  0) _targetZoomDistance -= Settings.zoomSpeed;
             else if (scroll < 0) _targetZoomDistance += Settings.zoomSpeed;
 
-            _targetZoomDistance = Mathf.Clamp(_targetZoomDistance, minDistance, maxDistance);
+            _targetZoomDistance = Mathf.Clamp(_targetZoomDistance, Settings.minDistance, Settings.maxDistance);
             DistanceTarget = Mathf.SmoothDamp(DistanceTarget, _targetZoomDistance, ref _currentZoomVelocity, Settings.mouseZoomSmoothness);
-            return (_targetZoomDistance - Settings.distance) * deltaTime;
+            return (_targetZoomDistance - Settings.defaultDistance) * deltaTime;
         }
 
         private Vector2 GetRotationInput()
@@ -286,26 +243,42 @@ namespace EmberAI.Cameras
             }
             else
             {
-                LeftButtonDown  = InputUtil.IsLeftMouseDown();
-                RightButtonDown = InputUtil.IsRightMouseDown();
                 if (Settings.rotationMode == RotationMode.Always ||
-                    (Settings.rotationMode == RotationMode.LeftMouseButton  && LeftButtonDown) ||
-                    (Settings.rotationMode == RotationMode.RightMouseButton && RightButtonDown))
+                    (Settings.rotationMode == RotationMode.LeftMouseButton  && InputUtil.IsLeftMouseDown()) ||
+                    (Settings.rotationMode == RotationMode.RightMouseButton && InputUtil.IsLeftMouseDown()))
                 {
                     targetRotation = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
                 }
+                
                 bool isKeyRot = false;
-                if (InputUtil.IsKeyDown(Settings.rotateLeftKey))  { isKeyRot = true; targetRotation.x =  1; }
-                else if (InputUtil.IsKeyDown(Settings.rotateRightKey)) { isKeyRot = true; targetRotation.x = -1; }
-                if (InputUtil.IsKeyDown(Settings.rotateUpKey))    { isKeyRot = true; targetRotation.y =  1; }
-                else if (Input.GetKey(Settings.rotateDownKey))    { isKeyRot = true; targetRotation.y = -1; }
+
+                if (InputUtil.IsKeyDown(Settings.rotateLeftKey))
+                {
+                    isKeyRot = true; targetRotation.x =  1;
+                }
+                else if (InputUtil.IsKeyDown(Settings.rotateRightKey))
+                {
+                    isKeyRot = true; targetRotation.x = -1;
+                }
+
+                if (InputUtil.IsKeyDown(Settings.rotateUpKey))
+                {
+                    isKeyRot = true; targetRotation.y =  1;
+                }
+                else if (Input.GetKey(Settings.rotateDownKey))
+                {
+                    isKeyRot = true; targetRotation.y = -1;
+                }
+                
                 targetRotation *= Settings.rotationSpeed;
+                
                 if (isKeyRot) targetRotation *= Settings.nonMouseRotationModifier;
             }
 
             XRotation = Mathf.SmoothDamp(XRotation, XRotation + targetRotation.x, ref _currentRotationVelocityX, Settings.mouseRotateSmoothness);
             YRotation = Mathf.SmoothDamp(YRotation, YRotation - targetRotation.y, ref _currentRotationVelocityY, Settings.mouseRotateSmoothness);
             YRotation = ClampAngle(YRotation, Settings.rotationRange.x, Settings.rotationRange.y);
+            
             return targetRotation;
         }
 
@@ -336,8 +309,8 @@ namespace EmberAI.Cameras
         protected virtual void CalculateTargetPosition(float deltaTime)
         {
             if (_target == null) return;
-            DistanceTarget = Mathf.Clamp(DistanceTarget + MoveDirection.z, minDistance, maxDistance);
-            Settings.distance += (DistanceTarget - Settings.distance) * Settings.zoomSpeed * deltaTime;
+            DistanceTarget = Mathf.Clamp(DistanceTarget + MoveDirection.z, Settings.minDistance, Settings.maxDistance);
+            Settings.defaultDistance += (DistanceTarget - Settings.defaultDistance) * Settings.zoomSpeed * deltaTime;
             _smoothPosition = Settings.smoothFollow
                 ? Vector3.Lerp(_smoothPosition, _target.position, deltaTime * Settings.followSpeed)
                 : _target.position;

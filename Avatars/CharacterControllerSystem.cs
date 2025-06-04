@@ -36,6 +36,12 @@ namespace EmberAI.Avatars
 
         // Store last move direction so we can keep moving that way while decelerating:
         private Vector3 _lastMoveDirection = Vector3.zero;
+        
+        // Store the current IK local rotation override for head:
+        private Quaternion _headIKRotation = Quaternion.identity;
+
+        // Buffer for jump input so it isn't lost mid‐air
+        private bool _jumpRequestedCached = false;
 
         [BoxGroup("Settings"), SerializeField]
         private CharacterSettings settings;
@@ -69,12 +75,6 @@ namespace EmberAI.Avatars
 
         [BoxGroup("Debug"), ReadOnly, SerializeField]
         private Transform headTransform;
-        
-        // Store the current IK local rotation override for head:
-        private Quaternion _headIKRotation = Quaternion.identity;
-
-        // Buffer for jump input so it isn't lost mid‐air
-        private bool _jumpRequestedCached = false;
         
         #endregion
 

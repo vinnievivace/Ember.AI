@@ -11,7 +11,7 @@ namespace EmberAI.Settings
 	public class ThirdPersonCameraSettings : BaseData
     {
 	    [BoxGroup("General")]
-	    public ThirdPersonCamera.UpdateMode updateMode = ThirdPersonCamera.UpdateMode.LateUpdate; 
+	    public EmberBehaviour.UpdateMode updateMode = EmberBehaviour.UpdateMode.FixedUpdate; 
         
 	    [BoxGroup("Mouse")]
 	    [Tooltip("If true, the mouse will be locked to screen center and hidden")]
@@ -71,10 +71,27 @@ namespace EmberAI.Settings
 
 	    
 	    [BoxGroup("Zoom")] 
-        public float distance = 10.0f, minDistance = 4, maxDistance = 10;
+        public float defaultDistance = 10.0f, minDistance = 4, maxDistance = 10;
         
         [BoxGroup("Zoom")] 
         [Range(0,10)]
         public float zoomSpeed = 5f;
+        
+        [BoxGroup("Blocking"), SerializeField]
+        public LayerMask BlockingLayers;
+        
+        [BoxGroup("Blocking"), SerializeField, Tooltip("Radius for spherecast along spring-arm used to avoid obstacle/ground clipping.")]
+        public float blockingDetectionRadius = 0.5f;
+
+        [BoxGroup("Blocking"), SerializeField, Tooltip("Normal field of view.")]
+        public float normalFOV = 60f;
+        
+        [BoxGroup("Blocking"), SerializeField, Tooltip("Increased FOV when close to geometry.")]
+        public float blockedFOV = 75f;
+        
+        [BoxGroup("Blocking"), SerializeField, Tooltip("Speed to transition FOV.")]
+        public float FOVSmoothTime = 0.2f;
     }
+	
+	
 }

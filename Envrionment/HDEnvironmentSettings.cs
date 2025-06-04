@@ -14,8 +14,14 @@ namespace EmberAI.Envrionment
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
+        [BoxGroup("Ground"), SerializeField]
+        public LayerMask GroundLayer;
+        
         [BoxGroup("Sun")] 
         public int sunIntensity = 80500, sunTemperature = 5050;
+        
+        [BoxGroup("AvatarSpot"), SerializeField] 
+        public RenderingLayerMask AvatarLightLayer;
         
         [BoxGroup("AvatarSpot")]
         public int avatarSpotIntensity = 6500;

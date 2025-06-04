@@ -24,7 +24,7 @@ namespace EmberAI.Avatars
             return new Vector2(vel.x, vel.z);
         }
         
-        public override bool JumpRequested() => false;
+        public override bool JumpTriggered() => false;
         public override bool IsRunning()     => false;
         public override bool IsCrouching()   => false;
     }

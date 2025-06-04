@@ -2,6 +2,7 @@ using Core;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using EmberAI.Core.Util;
+using EmberAI.Envrionment;
 using EmberAI.Settings;
 using EmberAI.UI;
 using JetBrains.Annotations;
@@ -18,6 +19,7 @@ namespace EmberAI.Cameras
         private Vector3 _smoothPosition;
 
         // blocking & spring-arm
+        private LayerMask _groundLayer;
         private float _blockedDistance = 10f;
         private float _blockedDistanceV;
 
@@ -126,8 +128,9 @@ namespace EmberAI.Cameras
             Cursor.lockState = Settings.lockCursor ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible   = !Settings.lockCursor;
 
-            if (Settings.updateMode == UpdateMode.Update)
-                UpdateTransform(Time.deltaTime);
+            _groundLayer = HDEnvironmentManager.Instance.GroundLayer;
+
+            if (Settings.updateMode == UpdateMode.Update) UpdateTransform(Time.deltaTime);
         }
 
         protected override void OnFixedUpdate()
@@ -170,7 +173,12 @@ namespace EmberAI.Cameras
 
             bool hitSomething = false;
             float hitDist = desiredDist;
-            if (Physics.SphereCast(castOrigin, springSphereRadius, dir, out RaycastHit hitInfo, castDistance, Settings.blockingLayers))
+            
+            
+            
+            if(_groundLayer == 0) Debug.LogError("No ground layers set, ground collision will not work.");
+            
+            if (Physics.SphereCast(castOrigin, springSphereRadius, dir, out RaycastHit hitInfo, castDistance, _groundLayer))
             {
                 hitDist = hitInfo.distance - springSphereRadius;
                 _blockedDistance = Mathf.SmoothDamp(_blockedDistance, hitDist, ref _blockedDistanceV, 0.05f);

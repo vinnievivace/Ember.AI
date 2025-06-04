@@ -139,13 +139,13 @@ namespace EmberAI.Avatars
             avatarAnimator.active = active;
 
             // Buffer jump input here—only set flag, don't consume yet
-            if (settings.canJump && characterInput.JumpRequested())
+            if (settings.canJump && characterInput.JumpTriggered())
             {
                 _jumpRequestedCached = true;
             }
 
             if (settings.updateMode == UpdateMode.Update) 
-                ApplyUpdates(Time.deltaTime);
+                ApplyInputs(Time.deltaTime);
         }
 
         protected override void OnLateUpdate()
@@ -153,7 +153,7 @@ namespace EmberAI.Avatars
             base.OnLateUpdate();
             
             if (settings.updateMode == UpdateMode.LateUpdate) 
-                ApplyUpdates(Time.deltaTime);
+                ApplyInputs(Time.deltaTime);
         }
         
         protected override void OnFixedUpdate()
@@ -161,7 +161,7 @@ namespace EmberAI.Avatars
             base.OnFixedUpdate();
             
             if (settings.updateMode == UpdateMode.FixedUpdate) 
-                ApplyUpdates(Time.fixedDeltaTime);
+                ApplyInputs(Time.fixedDeltaTime);
         }
 
         private void OnAnimatorIK(int layerIndex)
@@ -237,7 +237,7 @@ namespace EmberAI.Avatars
             avatarAnimator.InitializeAnimator(settings);
         }
 
-        private void ApplyUpdates(float delta)
+        private void ApplyInputs(float delta)
         {
             if (UIManager.Instance != null) 
                 active = !UIManager.Instance.UIInteraction;
@@ -254,6 +254,7 @@ namespace EmberAI.Avatars
             // Determine if we can consume the buffered jump this frame:
             bool wasGrounded = controller.isGrounded;
             bool jumpRequestedThisFrame = false;
+            
             if (settings.canJump && _jumpRequestedCached && wasGrounded)
             {
                 jumpRequestedThisFrame = true;
@@ -261,11 +262,10 @@ namespace EmberAI.Avatars
             }
 
             float rawTarget = 0f;
+            
             if (rawMoving)
             {
-                rawTarget = isCrouching 
-                    ? settings.crouchSpeed 
-                    : (isRunning ? settings.runSpeed : settings.walkSpeed);
+                rawTarget = isCrouching ? settings.crouchSpeed : (isRunning ? settings.runSpeed : settings.walkSpeed);
                 
                 _lastRawTarget = rawTarget;
             }
@@ -284,6 +284,7 @@ namespace EmberAI.Avatars
             _wasMovingLastFrame = rawMoving;
 
             Vector3 moveDir = CalculateMoveDirection(moveInput);
+            
             if (rawMoving)
             {
                 _lastMoveDirection = moveDir.normalized;
@@ -324,9 +325,7 @@ namespace EmberAI.Avatars
                 _verticalVelocity += settings.gravity * delta;
             }
 
-            Vector3 appliedDirection = _decelerating 
-                ? _lastMoveDirection 
-                : (rawMoving ? moveDir.normalized : Vector3.zero);
+            Vector3 appliedDirection = _decelerating ? _lastMoveDirection : (rawMoving ? moveDir.normalized : Vector3.zero);
 
             // Project onto the slope
             Vector3 groundNormal = wasGrounded ? SampleGroundNormal() : Vector3.up;
@@ -334,19 +333,17 @@ namespace EmberAI.Avatars
             Vector3 velocity     = horizontal + Vector3.up * _verticalVelocity;
             controller.Move(velocity * delta);
 
-            float maxSpeedForAnim = _decelerating ? _stopRawTarget : rawTarget;
-            bool isGroundedNow   = controller.isGrounded;
-            bool jumpForAnim     = jumpRequestedThisFrame && wasGrounded;
-            bool crouchForAnim   = isCrouching && isGroundedNow;
+            AvatarAnimatorState state = new AvatarAnimatorState();
+            
+            state.maxSpeed = _decelerating ? _stopRawTarget : rawTarget;
+            state.isGrounded   = controller.isGrounded;
+            state.jump     = jumpRequestedThisFrame;
+            state.crouch   = isCrouching && state.isGrounded;
+            state.dance = characterInput.IsDancing();
+            state.currentSpeed = _currentSpeed;
+            state.verticalVelocity = _verticalVelocity;
 
-            avatarAnimator.UpdateAnimatorParams(
-                _currentSpeed, 
-                maxSpeedForAnim, 
-                jumpForAnim, 
-                crouchForAnim, 
-                isGroundedNow, 
-                _verticalVelocity
-            );
+            avatarAnimator.UpdateAnimatorState(state);
         }
         
         private Vector3 CalculateMoveDirection(Vector2 input)

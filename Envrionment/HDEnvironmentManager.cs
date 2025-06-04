@@ -1,6 +1,5 @@
 using Core;
 using EmberAI.Attributes;
-using EmberAI.Avatars;
 using UnityEngine;
 
 namespace EmberAI.Envrionment
@@ -21,8 +20,7 @@ namespace EmberAI.Envrionment
         [BoxGroup("Settings"), SerializeField]
         private HDEnvironmentSettings Settings;
 
-        [BoxGroup("Lighting"), SerializeField] 
-        private RenderingLayerMask avatarLightLayer;
+        
 
         [BoxGroup("Lighting"), SerializeField] 
         private Light sun, avatarSpot;
@@ -31,6 +29,8 @@ namespace EmberAI.Envrionment
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
+        public LayerMask GroundLayer => Settings.GroundLayer;
+        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ namespace EmberAI.Envrionment
                 avatarSpot.areaSize = new Vector2(Settings.avatarSpotWidth, Settings.avatarSpotHeight);
                 
                 avatarSpot.transform.localPosition = new Vector3(0, Settings.avatarSpotYOffset, Settings.avatarSpotDistance);
-                avatarSpot.renderingLayerMask = avatarLightLayer;
+                avatarSpot.renderingLayerMask = Settings.AvatarLightLayer;
             }
         }
 
@@ -96,12 +96,18 @@ namespace EmberAI.Envrionment
 
         #region General ................................................................................................
 
-        // TODO refine this, very rough! should check for HDRP, should be more generic etc
-        public void SetAvatar(AvatarAnimator avatar)
+        /// <summary>
+        /// Applies spot lighting settings to all child renderers of the target GameObject.
+        /// </summary>
+        /// <param name="target">
+        /// The GameObject to which the spot lighting settings should be applied. All Renderer components
+        /// in the children of this GameObject will have their rendering layer mask updated.
+        /// </param>
+        public void ApplySpotLighting(Component target)
         {
-            foreach (Renderer renderer in avatar.GetComponentsInChildren<Renderer>())
+            foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>())
             {
-                renderer.renderingLayerMask = avatarLightLayer;
+                renderer.renderingLayerMask = Settings.AvatarLightLayer;
             }
         }
         

@@ -24,7 +24,7 @@ public class KeyboardMouseInput : BaseCharacterInput
     #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
     [BoxGroup("Settings")]
-    public KeyCode runKey = KeyCode.LeftShift, jumpKey = KeyCode.Space, crouchKey = KeyCode.LeftControl;
+    public KeyCode runKey = KeyCode.LeftShift, jumpKey = KeyCode.Space, crouchKey = KeyCode.LeftControl, danceKey = KeyCode.Return;
     
     
     #endregion
@@ -73,9 +73,14 @@ public class KeyboardMouseInput : BaseCharacterInput
         #endif
     }
 
-    public override bool JumpRequested()
+    public override bool JumpTriggered()
     {
         return InputUtil.WasKeyPressed(jumpKey);
+    }
+
+    public override bool IsDancing()
+    {
+        return InputUtil.IsKeyDown(danceKey);
     }
 
     public override bool IsRunning()

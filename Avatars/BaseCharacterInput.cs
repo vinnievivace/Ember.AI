@@ -45,7 +45,12 @@ namespace EmberAI.Avatars
             throw new System.NotImplementedException();
         }
 
-        public virtual bool JumpRequested()
+        public virtual bool JumpTriggered()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public virtual bool IsDancing()
         {
             throw new System.NotImplementedException();
         }

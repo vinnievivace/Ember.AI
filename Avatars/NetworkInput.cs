@@ -15,7 +15,7 @@ namespace EmberAI.Avatars
             return syncedMove;
         }
 
-        public override bool JumpRequested()
+        public override bool JumpTriggered()
         {
             return syncedJump;
         }

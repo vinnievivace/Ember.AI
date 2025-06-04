@@ -23,6 +23,7 @@ namespace EmberAI.Avatars
 
         private static readonly int SpeedID = Animator.StringToHash("Speed");
         private static readonly int JumpID = Animator.StringToHash("Jump");
+        private static readonly int DanceID = Animator.StringToHash("Dance");
         private static readonly int CrouchID = Animator.StringToHash("Crouch");
         private static readonly int GroundedID = Animator.StringToHash("Grounded");
         private static readonly int FreeFallID = Animator.StringToHash("FreeFall");
@@ -150,7 +151,7 @@ namespace EmberAI.Avatars
             animator.Rebind();
             
             // HACK, need to refine, but want to include in AvatarSpotlight
-            HDEnvironmentManager.Instance.SetAvatar(this);
+            HDEnvironmentManager.Instance.ApplySpotLighting(this);
             
         }
         
@@ -164,27 +165,32 @@ namespace EmberAI.Avatars
             overrides[idleIndex] = new KeyValuePair<AnimationClip, AnimationClip>(overrideState.Key, clip);
             
         }
-        
-        public void UpdateAnimatorParams(float currentSpeed, float maxSpeed, bool jump, bool crouch, bool isGrounded, float verticalVelocity)
+
+        /// <summary>
+        /// Updates the animator state based on the provided parameters in the AvatarAnimatorState.
+        /// </summary>
+        /// <param name="state">The state containing information such as speed, grounded status, jump, crouch, and vertical velocity to update the animator parameters.</param>
+        public void UpdateAnimatorState(AvatarAnimatorState state)
         {
             if (animator == null) return;
 
             // 1) SPEED PARAMETER: zero when idle, otherwise actual speed
-            bool isMoving = currentSpeed > 0.001f;
+            bool isMoving = state.currentSpeed > 0.001f;
             
-            animator.SetFloat(SpeedID, isMoving ? currentSpeed : 0f);
+            animator.SetFloat(SpeedID, isMoving ? state.currentSpeed : 0f);
 
             // 2) JUMP / GROUNDED / FREEFALL
-            bool isFalling = !isGrounded && verticalVelocity < 0f;
+            bool isFalling = !state.isGrounded && state.verticalVelocity < 0f;
             
-            animator.SetBool(JumpID, jump);
-            animator.SetBool(CrouchID, crouch);
-            animator.SetBool(GroundedID, isGrounded);
+            animator.SetBool(JumpID, state.jump);
+            animator.SetBool(CrouchID, state.crouch);
+            animator.SetBool(DanceID, state.dance);
+            animator.SetBool(GroundedID, state.isGrounded);
             animator.SetBool(FreeFallID, isFalling);
 
             // 3) MOTION SPEED: If moving, use (currentSpeed / maxSpeed) so the walk/run blend matches actual speed.
             // If fully stopped, set to 1 so Idle plays at normal rate.
-            float motionSpeed = isMoving && maxSpeed > 0f ? Mathf.Clamp01(currentSpeed / maxSpeed) : 1f;
+            float motionSpeed = isMoving && state.maxSpeed > 0f ? Mathf.Clamp01(state.currentSpeed / state.maxSpeed) : 1f;
             
             animator.SetFloat(MotionSpeedID, motionSpeed);
         }

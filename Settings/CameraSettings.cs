@@ -76,15 +76,5 @@ namespace EmberAI.Settings
         [BoxGroup("Zoom")] 
         [Range(0,10)]
         public float zoomSpeed = 5f;
-
-        [BoxGroup("Blocking")]
-        public LayerMask blockingLayers;
-		
-        [BoxGroup("Blocking")]
-        public float blockingRadius = 1f, blockingSmoothTime = 0.1f, blockingOriginOffset;
-		
-        [BoxGroup("Blocking")]
-        [Range(0, 1f)]
-        public float blockedOffset = 0.5f;
     }
 }

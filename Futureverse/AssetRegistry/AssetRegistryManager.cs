@@ -182,6 +182,9 @@ namespace EmberAI.Futureverse.AssetRegistry
         
         private async void GetAssets(string[] wallets, string collectionId)
         {
+            if(wallets.Length == 0) throw new Exception("No wallets provided");
+            if(collectionId.IsEmptyString()) throw new Exception("No collection ID provided");
+            
             ARAssetsResponse response = await SendARRequest<ARAssetsRequest, ARAssetsResponse>(new ARAssetsRequest(wallets, new []{collectionId}));
             
             if(response == null) throw new Exception("Failed to get collections");

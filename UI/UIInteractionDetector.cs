@@ -1,51 +1,25 @@
+using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace EmberAI.UI
 {
-    public class UIInteractionDetector : EmberBehaviour, ISelectHandler, IDeselectHandler, IBeginDragHandler, IEndDragHandler
+    public class UIInteractionDetector : EmberBehaviour,
+        ISelectHandler, IDeselectHandler,
+        IBeginDragHandler, IEndDragHandler,
+        IPointerEnterHandler, IPointerExitHandler,
+        IPointerClickHandler
     {
-        #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
-
-        #endregion
-
-        #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #endregion
-
-        #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #endregion
-
-        #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
-
-        #endregion
-
-        #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #region Static .................................................................................................
-
-        #endregion
-
-        #region Inspector ..............................................................................................
-
-        #endregion
-
         #region Initialization .........................................................................................
 
         public override void InitializeDependencies()
         {
             base.InitializeDependencies();
-
             description = "Broadcasts interactions to " + nameof(UIManager);
         }
 
         #endregion
 
-        #region MonoBehaviours .........................................................................................
-       
-        #endregion
-
-        #region General ................................................................................................
+        #region Event Handlers .........................................................................................
 
         public void OnSelect(BaseEventData eventData)
         {
@@ -66,15 +40,22 @@ namespace EmberAI.UI
         {
             UIManager.Instance.SetActiveStatus(this, false);
         }
-        
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            UIManager.Instance.SetActiveStatus(this, true);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            UIManager.Instance.SetActiveStatus(this, false);
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            UIManager.Instance.SetActiveStatus(this, true);
+        }
+
         #endregion
-
-        #region Event Handlers .........................................................................................
-
-        #endregion
-
-#endregion
-
-
     }
 }

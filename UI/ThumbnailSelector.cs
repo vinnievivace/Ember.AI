@@ -1,6 +1,8 @@
 using EmberAI.Attributes;
 using EmberAI.Core;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace EmberAI.UI
@@ -19,22 +21,36 @@ namespace EmberAI.UI
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        [BoxGroup("Settings"), SerializeField]
-        private Thumbnail _headingPrefab, _thumbnailPrefab;
+        [BoxGroup("Settings"), SerializeField] 
+        private string label;
+        
+        [FormerlySerializedAs("_headingPrefab")] [BoxGroup("Settings"), SerializeField]
+        private Thumbnail HeadingPrefab;
 
+        [FormerlySerializedAs("_thumbnailPrefab")] [BoxGroup("Settings"), SerializeField]
+        private Thumbnail ThumbnailPrefab;
+
+        [FormerlySerializedAs("_rectTransform")] [BoxGroup("Components"), SerializeField]
+        private RectTransform rectTransform;
+        
+        [BoxGroup("Components"), SerializeField]
+        private TextMeshProUGUI labelText;
+        
         [BoxGroup("Components"), SerializeField] 
         private HorizontalOrVerticalLayoutGroup _contentLayout;
         
-        [BoxGroup("Components"), SerializeField] 
-        private ScrollRect _scrollRect;
+        [FormerlySerializedAs("_scrollRect")] [BoxGroup("Components"), SerializeField] 
+        private ScrollRect ScrollRect;
         
-        [BoxGroup("Components"), Tooltip("Required for correct scrolling. Set H or V to 'preferred size"), SerializeField]
-        private ContentSizeFitter _contentSizeFitter;
+        [FormerlySerializedAs("_contentSizeFitter")] [BoxGroup("Components"), Tooltip("Required for correct scrolling. Set H or V to 'preferred size"), SerializeField]
+        private ContentSizeFitter ContentSizeFitter;
         
         #endregion
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
+        public RectTransform RectTransform => rectTransform;
+        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,29 +69,31 @@ namespace EmberAI.UI
         {
             base.InitializeDependencies();
 
+            rectTransform = this.GetComponent<RectTransform>();
+            
             description = "Scrollable Thumbnail Selector UI";
 
             if (_contentLayout == null) _contentLayout = GetComponentInChildren<HorizontalOrVerticalLayoutGroup>();
-            if(_scrollRect == null) _scrollRect = GetComponentInChildren<ScrollRect>();
+            if(ScrollRect == null) ScrollRect = GetComponentInChildren<ScrollRect>();
 
-            if (_scrollRect != null)
+            if (ScrollRect != null)
             {
-                _scrollRect.movementType = ScrollRect.MovementType.Elastic;
+                ScrollRect.movementType = ScrollRect.MovementType.Elastic;
             }
 
             if (_contentLayout != null)
             {
-                _contentSizeFitter = _contentLayout.GetOrAddComponent<ContentSizeFitter>();
+                ContentSizeFitter = _contentLayout.GetOrAddComponent<ContentSizeFitter>();
 
                 if (_contentLayout is VerticalLayoutGroup)
                 {
-                    _contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-                    _contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                    ContentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                    ContentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
                 }
                 else
                 {
-                    _contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-                    _contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                    ContentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                    ContentSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
                 }
             }
         }
@@ -84,13 +102,20 @@ namespace EmberAI.UI
 
         #region MonoBehaviours .........................................................................................
 
+        protected override void OnStart()
+        {
+            base.OnStart();
+            
+            if(labelText != null) labelText.text = label;
+        }
+
         #endregion
 
         #region General ................................................................................................
 
         public void AddItem(string label, string imagePath)
         {
-            Thumbnail instance = Instantiate(_thumbnailPrefab, _contentLayout.transform, true);
+            Thumbnail instance = Instantiate(ThumbnailPrefab, _contentLayout.transform, true);
             RectTransform layoutTransform = _contentLayout.GetComponent<RectTransform>();
             
             instance.GetComponent<RectTransform>().localScale = Vector3.one;
@@ -112,6 +137,6 @@ namespace EmberAI.UI
 
         #endregion
 
-#endregion
+        #endregion
     }
 }

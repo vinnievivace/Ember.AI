@@ -1,7 +1,6 @@
 using System;
-using EmberAI.UI;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
+using EmberAI.UI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -11,6 +10,9 @@ namespace EmberAI.Core.Util
 {
     public static class InputUtil
     {
+        private static float _lastInputTime = -10f;
+        private const float InputCooldownDuration = 0.35f;
+
         #if ENABLE_INPUT_SYSTEM
         private static bool UseNewInputSystem => (Keyboard.current != null) || (Gamepad.current != null) || (Mouse.current != null);
         #endif
@@ -63,7 +65,10 @@ namespace EmberAI.Core.Util
 
         public static bool AnyCurrentInput()
         {
-            if (UIManager.Instance != null && UIManager.Instance.UIInteraction) return false;
+            if (UIManager.Instance != null && UIManager.Instance.UIInteraction)
+                return false;
+
+            bool hasInput = false;
 
             #if ENABLE_INPUT_SYSTEM
             if (UseNewInputSystem)
@@ -73,29 +78,47 @@ namespace EmberAI.Core.Util
 
                 if (mouse != null)
                 {
-                    if ((mouse.leftButton?.isPressed ?? false) || 
-                        (mouse.rightButton?.isPressed ?? false) || 
-                        (mouse.middleButton?.isPressed ?? false)) 
-                        return true;
-                }
-
-                if (keyboard != null)
-                {
-                    foreach (KeyControl key in keyboard.allKeys)
+                    if ((mouse.leftButton?.isPressed ?? false) ||
+                        (mouse.rightButton?.isPressed ?? false) ||
+                        (mouse.middleButton?.isPressed ?? false) ||
+                        mouse.scroll.ReadValue() != Vector2.zero)
                     {
-                        if (key?.isPressed ?? false) 
-                            return true;
+                        hasInput = true;
                     }
                 }
 
-                return false;
+                if (!hasInput && keyboard != null)
+                {
+                    foreach (KeyControl key in keyboard.allKeys)
+                    {
+                        if (key?.isPressed ?? false)
+                        {
+                            hasInput = true;
+                            break;
+                        }
+                    }
+                }
             }
             #endif
 
-            // Legacy Input fallback: key or mouse buttons only, not movement
-            if (Input.anyKey || Input.GetMouseButton(0) || Input.GetMouseButton(1) || Input.GetMouseButton(2)) return true;
+            // Legacy fallback
+            if (!hasInput &&
+                (Input.anyKey ||
+                 Input.GetMouseButton(0) ||
+                 Input.GetMouseButton(1) ||
+                 Input.GetMouseButton(2) ||
+                 Input.mouseScrollDelta.y != 0))
+            {
+                hasInput = true;
+            }
 
-            return false;
+            // Update input timestamp
+            if (hasInput)
+            {
+                _lastInputTime = Time.time;
+            }
+
+            return Time.time - _lastInputTime < InputCooldownDuration;
         }
     }
 }

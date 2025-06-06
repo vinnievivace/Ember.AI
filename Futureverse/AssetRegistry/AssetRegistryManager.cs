@@ -17,7 +17,7 @@ namespace EmberAI.Futureverse.AssetRegistry
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 
         public Action OnCollectionsLoaded;
-        public Action<List<AssetItem>> OnAssetsLoaded;
+        public Action<string, List<AssetItem>> OnAssetsLoaded;
         
         #endregion
 
@@ -31,7 +31,7 @@ namespace EmberAI.Futureverse.AssetRegistry
 		private const string TNLCollectionID = "1:evm:0x6bca6de2dbdc4e0d41f7273011785ea16ba47182";
     	private const string FlufCollectionID = "1:evm:0xccc441ac31f02cd96c153db6fd5fe0a2f4e6a68d";
     	private const string AIFACollectionID = "1:evm:0x96be46c50e882dbd373081d08e0cde2b055adf6c";
-        private const string ASMBrainCollectionID = "1:evm:0xd0318da435dbce0b347cc6faa330b5a9889e3585";
+        public const string ASMBrainCollectionID = "1:evm:0xd0318da435dbce0b347cc6faa330b5a9889e3585";
         private const string PBCollectionID = "1:evm:0x35471f47c3c0bc5fc75025b97a19ecdde00f78f8";
         private const string GenesisWalkerCollectionID = "1:evm:0x258aeac01672e6857972707fc129a6a39d09758b";
         
@@ -202,15 +202,24 @@ namespace EmberAI.Futureverse.AssetRegistry
                     // clumsy, but different collections have different metadata, so not really my clumsy!!
                     if (glbPath.IsEmptyString()) glbPath = edge.node.metadata.properties.model;
                 
-                    assets.Add(new AssetItem(tokenID, imagePath, glbPath));
+                    assets.Add(new AssetItem(tokenID, imagePath, glbPath, collectionId));
                 }
                 catch 
                 {
                     Log(LogLevel.Warning, "invalid meta data for token " + edge.node.tokenId + ", cannot add to asset list");
                 }
             }
+
+            if (assets.Count == 0)
+            {
+                Log(LogLevel.Warning, "no assets found for collection " + collectionId);
+            }
+            else
+            {
+                OnAssetsLoaded?.Invoke(assets[0].CollectionID, assets);
+            }
             
-            OnAssetsLoaded?.Invoke(assets);
+            
         }
         
         #endregion

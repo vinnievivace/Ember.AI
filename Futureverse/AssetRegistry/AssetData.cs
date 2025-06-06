@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace EmberAI.Futureverse.AssetRegistry
 {
@@ -9,11 +10,14 @@ namespace EmberAI.Futureverse.AssetRegistry
        public string ImagePath { get; private set; }
        public string GLBPath { get; private set; }
        
-       public AssetItem(string tokenID, string imagePath, string glbPath)
+       public string CollectionID { get; private set; }
+       
+       public AssetItem(string tokenID, string imagePath, string glbPath, string collectionID)
        {
            TokenID = tokenID;
            ImagePath = imagePath;
            GLBPath = glbPath;
+           CollectionID = collectionID;
        }
     }
 }

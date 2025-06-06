@@ -102,8 +102,6 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region MonoBehaviours .........................................................................................
 
-        
-
         private void OnEnable()
         {
             FPAuthManager.Instance.OnLoginComplete += OnFPLoginComplete;

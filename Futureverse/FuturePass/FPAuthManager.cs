@@ -67,6 +67,13 @@ namespace EmberAI.Futureverse.FuturePass
         
         [BoxGroup("API"), SerializeField, ReadOnly]
         private string userLogoutEndpoint = "https://login.futureverse.app/session/end";
+
+        [BoxGroup("Debug"), SerializeField, Tooltip("When true, the Debug wallet addresses are used, and AUTH flow skipped in Editor")]
+        private bool useDebugLogin;
+        
+        [BoxGroup("Debug"), SerializeField, Tooltip("Debug Wallet address used to skip AUTH flow in Editor")]
+        [PlayerPref]
+        private string debugTRNAddress, debugETHAddress;
         
         [BoxGroup("Debug"), SerializeField, ReadOnly]
         private string accessToken = "";
@@ -104,11 +111,25 @@ namespace EmberAI.Futureverse.FuturePass
 
         #region MonoBehaviours .........................................................................................
 
-        protected override void OnAwake()
+        protected override void OnStart()
         {
-            base.OnAwake();
-            
-            Login();
+            base.OnStart();
+        
+            if (Application.isEditor && useDebugLogin)
+            {
+                // assign dummy access token as its not required for editor
+                accessToken = "editor dummy token";
+                
+                
+                ETHAddress = debugETHAddress;
+                TRNAddress = debugTRNAddress;
+                
+                OnLoginComplete?.Invoke();
+            }
+            else
+            {
+                Login();
+            }
         }
         
         #endregion

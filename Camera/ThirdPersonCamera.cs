@@ -53,6 +53,8 @@ namespace EmberAI.Cameras
         public Transform Target { get => _target; set => _target = value; }
         public float FollowSpeed { set => Settings.followSpeed = value; }
         public float ZoomModifier { get; set; }
+        
+        public bool HasInput { get; private set; }
 
         private static float ClampAngle(float angle, float min, float max)
         {
@@ -212,8 +214,15 @@ namespace EmberAI.Cameras
         public void UpdateInput()
         {
             if (!_camera.enabled) return;
-            SetRotation(GetRotationInput());
-            SetMoveDirection(GetZoomInput(Time.deltaTime));
+
+            Vector2 rotation = GetRotationInput();
+            float zoom = GetZoomInput(Time.deltaTime);
+            
+            SetRotation(rotation);
+            SetMoveDirection(zoom);
+            
+            HasInput = rotation.sqrMagnitude > 0 || zoom != 0;
+            
         }
 
         private float GetZoomInput(float deltaTime)

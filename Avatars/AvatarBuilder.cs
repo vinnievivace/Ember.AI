@@ -39,9 +39,8 @@ namespace EmberAI.Avatars
                 return;
             }
 
-            // Apply any bone reparenting or manual rotations first
             ApplyBoneReparenting(target, config);
-            ApplyBoneRotations(target, config);
+            //ApplyBoneRotations(target, config);
 
             // Store original transform
             Vector3 originalPosition = target.position;
@@ -245,7 +244,7 @@ namespace EmberAI.Avatars
             }
         }
         
-        public static void ApplyBoneRotations(Transform target, AvatarConfig config)
+        /*public static void ApplyBoneRotations(Transform target, AvatarConfig config)
         {
             // store original rotation for each mapped bone
             foreach (BoneRetargetConfig boneRetarget in config.BoneMapping)
@@ -287,7 +286,7 @@ namespace EmberAI.Avatars
                 
                 bone.localEulerAngles = boneRotation.rotation;
             }
-        }
+        }*/
 
         public static void ApplyShoulderOffset(Transform root, AvatarConfig config)
         {

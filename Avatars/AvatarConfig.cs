@@ -80,10 +80,9 @@ namespace EmberAI.Avatars
         public List<BoneRetargetConfig> BoneMapping;
 
         [BoxGroup("Bones")]
-        [FormerlySerializedAs("BoneReparenting2")] 
         public List<BoneReparentConfig> BoneReparenting;
             
-        [BoxGroup("Bones")] 
+        [BoxGroup("Bones"), Tooltip("Runtime Bone Rotation offsets")] 
         public List<BoneRotationConfig> BoneRotations;
         
         [ButtonGroup("Debug", "Reset Rig Settings", "Reset Rig settings to HumanDescription defaults")]
@@ -136,9 +135,6 @@ namespace EmberAI.Avatars
     public class BoneRotationConfig
     {
         public AvatarBoneID BoneID;
-        public Vector3 rotation;
-        
-        [ReadOnly]
-        public Vector3 originalRotation;
+        public Vector3 offset;
     }
 }

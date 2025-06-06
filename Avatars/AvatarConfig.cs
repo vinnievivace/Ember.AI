@@ -82,8 +82,8 @@ namespace EmberAI.Avatars
         [BoxGroup("Bones")]
         public List<BoneReparentConfig> BoneReparenting;
             
-        [BoxGroup("Bones"), Tooltip("Runtime Bone Rotation offsets")] 
-        public List<BoneRotationConfig> BoneRotations;
+        /*[BoxGroup("Bones"), Tooltip("Runtime Bone Rotation offsets")] 
+        public List<BoneRotationConfig> BoneRotations;*/
         
         [ButtonGroup("Debug", "Reset Rig Settings", "Reset Rig settings to HumanDescription defaults")]
         private void ResetRigSettings()

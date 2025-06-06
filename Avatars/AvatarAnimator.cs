@@ -151,8 +151,9 @@ namespace EmberAI.Avatars
             animator.runtimeAnimatorController = overrideController;
             animator.Rebind();
 
+            // Disabled Bone Rotation for now, was not working as well as required, decided to stop burning time for now!.
             // 2) Cache each bone’s base localRotation so offsets aren’t cumulative
-            CacheBoneBaseRotations();
+            //CacheBoneBaseRotations();
 
             // 3) Apply any spotlight logic (unchanged)
             EnvironmentManager.Instance.ApplySpotLighting(this);
@@ -238,7 +239,9 @@ namespace EmberAI.Avatars
 
         #region ROTATION OFFSETS .......................................................................................
 
-        private void ApplyRotationOffsets()
+        // Disabled for now, was not working as well as required, decided to stop burning time for now!
+        
+        /*private void ApplyRotationOffsets()
         {
             if (avatarConfig == null || avatarConfig.BoneRotations == null || avatarConfig.BoneRotations.Count == 0) return;
 
@@ -282,7 +285,7 @@ namespace EmberAI.Avatars
 
                 boneBaseRotations[boneName] = bone.localRotation;
             }
-        }
+        }*/
 
         #endregion
 

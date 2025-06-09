@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace EmberAI.Futureverse.AssetRegistry
@@ -11,6 +12,11 @@ namespace EmberAI.Futureverse.AssetRegistry
        public string GLBPath { get; private set; }
        
        public string CollectionID { get; private set; }
+       
+       // unique properties for various collections
+       
+       [CanBeNull] 
+       public string TransparentImagePath { get; set; }
        
        public AssetItem(string tokenID, string imagePath, string glbPath, string collectionID)
        {

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using TMPro;
@@ -21,23 +22,24 @@ namespace EmberAI.UI
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
+        private readonly List<Thumbnail> _thumbnails = new List<Thumbnail>();
+
+        private Thumbnail _selectedThumbnail;
+        
         [BoxGroup("Settings"), SerializeField] 
         private string label;
         
-        [FormerlySerializedAs("_headingPrefab")] [BoxGroup("Settings"), SerializeField]
+        [BoxGroup("Settings"), SerializeField]
         private Thumbnail HeadingPrefab;
 
-        [FormerlySerializedAs("_thumbnailPrefab")] [BoxGroup("Settings"), SerializeField]
+        [BoxGroup("Settings"), SerializeField]
         private Thumbnail ThumbnailPrefab;
 
-        [FormerlySerializedAs("_rectTransform")] [BoxGroup("Components"), SerializeField]
-        private RectTransform rectTransform;
-        
         [BoxGroup("Components"), SerializeField]
         private TextMeshProUGUI labelText;
         
-        [BoxGroup("Components"), SerializeField] 
-        private HorizontalOrVerticalLayoutGroup _contentLayout;
+        [FormerlySerializedAs("_contentLayout")] [BoxGroup("Components"), SerializeField] 
+        private HorizontalOrVerticalLayoutGroup ContentLayout;
         
         [FormerlySerializedAs("_scrollRect")] [BoxGroup("Components"), SerializeField] 
         private ScrollRect ScrollRect;
@@ -49,8 +51,6 @@ namespace EmberAI.UI
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
-        public RectTransform RectTransform => rectTransform;
-        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,11 +69,9 @@ namespace EmberAI.UI
         {
             base.InitializeDependencies();
 
-            rectTransform = this.GetComponent<RectTransform>();
-            
             description = "Scrollable Thumbnail Selector UI";
 
-            if (_contentLayout == null) _contentLayout = GetComponentInChildren<HorizontalOrVerticalLayoutGroup>();
+            if (ContentLayout == null) ContentLayout = GetComponentInChildren<HorizontalOrVerticalLayoutGroup>();
             if(ScrollRect == null) ScrollRect = GetComponentInChildren<ScrollRect>();
 
             if (ScrollRect != null)
@@ -81,11 +79,11 @@ namespace EmberAI.UI
                 ScrollRect.movementType = ScrollRect.MovementType.Elastic;
             }
 
-            if (_contentLayout != null)
+            if (ContentLayout != null)
             {
-                ContentSizeFitter = _contentLayout.GetOrAddComponent<ContentSizeFitter>();
+                ContentSizeFitter = ContentLayout.GetOrAddComponent<ContentSizeFitter>();
 
-                if (_contentLayout is VerticalLayoutGroup)
+                if (ContentLayout is VerticalLayoutGroup)
                 {
                     ContentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
                     ContentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -115,20 +113,38 @@ namespace EmberAI.UI
 
         public void AddItem(string label, string imagePath)
         {
-            Thumbnail instance = Instantiate(ThumbnailPrefab, _contentLayout.transform, true);
-            RectTransform layoutTransform = _contentLayout.GetComponent<RectTransform>();
+            Thumbnail instance = Instantiate(ThumbnailPrefab, ContentLayout.transform, true);
+            RectTransform layoutTransform = ContentLayout.GetComponent<RectTransform>();
             
             instance.GetComponent<RectTransform>().localScale = Vector3.one;
             
-            instance.SetData(label, imagePath);;
+            instance.SetData(label, imagePath);
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(layoutTransform);
             
+            _thumbnails.Add(instance);
+        }
+
+        public void RemoveAllItems()
+        {
+            foreach (Thumbnail thumbnail in _thumbnails)
+            {
+                Destroy(thumbnail.gameObject);
+            }
+            _thumbnails.Clear();
+            
+            RectTransform layoutTransform = ContentLayout.GetComponent<RectTransform>();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(layoutTransform);
         }
         
         public void DispatchItemClicked(Thumbnail thumbnail)
         {
             OnItemClicked?.Invoke(thumbnail.Label);
+            
+            if(_selectedThumbnail != null) _selectedThumbnail.SetSelected(false);
+            
+            _selectedThumbnail = thumbnail;
+            _selectedThumbnail.SetSelected(true);
         }
         
         #endregion

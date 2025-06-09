@@ -198,11 +198,16 @@ namespace EmberAI.Futureverse.AssetRegistry
                     string tokenID = edge.node.tokenId;
                     string imagePath = edge.node.metadata.properties.image;
                     string glbPath = edge.node.metadata.properties.glb_url;
-
+                    
                     // clumsy, but different collections have different metadata, so not really my clumsy!!
                     if (glbPath.IsEmptyString()) glbPath = edge.node.metadata.properties.model;
-                
-                    assets.Add(new AssetItem(tokenID, imagePath, glbPath, collectionId));
+
+                    AssetItem item = new AssetItem(tokenID, imagePath, glbPath, collectionId);
+                    
+                    // various optional fields
+                    item.TransparentImagePath = edge.node.metadata.properties.image_transparent;
+                    
+                    assets.Add(item);
                 }
                 catch 
                 {

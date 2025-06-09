@@ -76,9 +76,6 @@ namespace EmberAI.Avatars
         public bool active = true;
 
         [BoxGroup("Debug"), ReadOnly, SerializeField]
-        private bool _hasInput;
-        
-        [BoxGroup("Debug"), ReadOnly, SerializeField]
         private Transform headTransform;
         
         #endregion
@@ -149,8 +146,6 @@ namespace EmberAI.Avatars
             
             avatarAnimator.active = active;
 
-            _hasInput = HasInput;
-            
             // Buffer jump input here—only set flag, don't consume yet
             if (settings.canJump && characterInput.JumpTriggered()) _jumpRequestedCached = true;
             
@@ -261,8 +256,6 @@ namespace EmberAI.Avatars
                 return;
             }
             
-            if (UIManager.Instance != null) active = !UIManager.Instance.UIInteraction;
-
             controller.enabled = active;
             
             if (!active) return;

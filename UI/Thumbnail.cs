@@ -3,6 +3,7 @@ using EmberAI.Attributes;
 using EmberAI.Core.Util;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace EmberAI.UI
@@ -20,19 +21,24 @@ namespace EmberAI.UI
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
         [BoxGroup("Components"), SerializeField]
-        private RawImage _image;
+        private RawImage Image;
         
         [BoxGroup("Components"), SerializeField]
-        private Button _button;
+        private Button Button;
 
         [BoxGroup("Components"), SerializeField]
-        private TextMeshProUGUI _labelTXT;
+        private TextMeshProUGUI LabelTXT;
+        
+        [BoxGroup("Components"), SerializeField]
+        private Image SelectedIndicator;
         
         #endregion
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
-        public string Label => _labelTXT.text;
+        public string Label => LabelTXT.text;
+        
+        public bool IsSelected { get; set; }
         
         #endregion
 
@@ -53,6 +59,8 @@ namespace EmberAI.UI
             base.InitializeDependencies();
             
             description = "Thumbnail for rendering items inside a " + nameof(ThumbnailSelector);
+            
+            
         }
 
         #endregion
@@ -61,12 +69,19 @@ namespace EmberAI.UI
 
         private void OnEnable()
         {
-            _button.onClick.AddListener(OnClicked);
+            Button.onClick.AddListener(OnClicked);
         }
 
         private void OnDisable()
         {
-            _button.onClick.RemoveListener(OnClicked);
+            Button.onClick.RemoveListener(OnClicked);
+        }
+
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            
+            SelectedIndicator.gameObject.SetActive(IsSelected);
         }
 
         #endregion
@@ -75,16 +90,30 @@ namespace EmberAI.UI
 
         public async void SetData(string label, string imagePath)
         {
-            _labelTXT.text = label;
-            _image.texture = await TextureUtil.LoadFromURL(imagePath);
+            LabelTXT.text = label;
+            Image.texture = await TextureUtil.LoadFromURL(imagePath);
         }
-        
+
+        public void SetSelected(bool value)
+        {
+            if(IsSelected == value) return;
+            
+            IsSelected = value;
+            
+            Debug.Log($"Selected: {LabelTXT.text} {value}");
+
+            
+            
+        }
+
         #endregion
 
         #region Event Handlers .........................................................................................
 
         private void OnClicked()
         {
+            if (IsSelected) return;
+            
             GetComponentInParent<ThumbnailSelector>().DispatchItemClicked(this);
         }
         

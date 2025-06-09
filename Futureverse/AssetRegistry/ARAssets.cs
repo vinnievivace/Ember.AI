@@ -107,7 +107,12 @@ namespace EmberAI.Futureverse.AssetRegistry
     public class AssetProperties
     {
         public string image;
-        public string glb_url; // goblins
-        public string model; // alteredstate
+        public string glb_url; 
+        
+        // Altered State
+        public string model;
+        
+        // ASM Genesis Brains
+        public string image_transparent;
     }
 }

@@ -227,9 +227,10 @@ namespace EmberAI.Cameras
 
         private float GetZoomInput(float deltaTime)
         {
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (Input.GetKey(Settings.zoomInKey))  _targetZoomDistance -= Settings.zoomSpeed;
-            else if (Input.GetKey(Settings.zoomOutKey)) _targetZoomDistance += Settings.zoomSpeed;
+            float scroll = InputUtil.GetMouseScroll();
+            
+            if (InputUtil.IsKeyDown(Settings.zoomInKey))  _targetZoomDistance -= Settings.zoomSpeed;
+            else if (InputUtil.IsKeyDown(Settings.zoomOutKey)) _targetZoomDistance += Settings.zoomSpeed;
 
             if (scroll >  0) _targetZoomDistance -= Settings.zoomSpeed;
             else if (scroll < 0) _targetZoomDistance += Settings.zoomSpeed;
@@ -256,7 +257,7 @@ namespace EmberAI.Cameras
                     (Settings.rotationMode == RotationMode.LeftMouseButton  && InputUtil.IsLeftMouseDown()) ||
                     (Settings.rotationMode == RotationMode.RightMouseButton && InputUtil.IsLeftMouseDown()))
                 {
-                    targetRotation = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+                    targetRotation = InputUtil.GetMouseAxis();
                 }
                 
                 bool isKeyRot = false;
@@ -274,7 +275,7 @@ namespace EmberAI.Cameras
                 {
                     isKeyRot = true; targetRotation.y =  1;
                 }
-                else if (Input.GetKey(Settings.rotateDownKey))
+                else if (InputUtil.IsKeyDown(Settings.rotateDownKey))
                 {
                     isKeyRot = true; targetRotation.y = -1;
                 }

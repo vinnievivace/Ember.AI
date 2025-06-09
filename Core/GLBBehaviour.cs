@@ -43,8 +43,8 @@ namespace EmberAI.Core
         [BoxGroup("Settings")] 
         public bool saveToCache;
         
-        [BoxGroup("Components"), Tooltip("If Humanoid, full 3rd person controller system is enabled"), SerializeField]
-        private CharacterControllerSystem ControllerSystem;
+        [BoxGroup("Components"), Tooltip("If Humanoid, full 3rd person controller system is enabled")]
+        public CharacterControllerSystem ControllerSystem;
         
         [BoxGroup("Avatar")]
         public AvatarConfig avatarConfig;
@@ -237,7 +237,7 @@ namespace EmberAI.Core
                 controller.center = new Vector3(0, avatarConfig.yOffset, 0);
                 controllerSystem.active = false;
             
-                transform.position = new Vector3(transform.position.x, transform.position.y + 5, transform.position.z);
+                transform.position = new Vector3(transform.position.x, transform.position.y + 15, transform.position.z);
             
                 CallbackManager.AddOneOff(this, 0.5f, () => { controllerSystem.active = true; });
             }

@@ -131,9 +131,9 @@ namespace EmberAI.Avatars
             avatarConfig = config;
             animator.avatar = avatar;
 
-            // 1) Build AnimatorOverrideController exactly as before
-            AnimatorOverrideController overrideController =
-                new AnimatorOverrideController(animator.runtimeAnimatorController);
+            animator.runtimeAnimatorController = CharacterSettings.animatorController;
+            
+            AnimatorOverrideController overrideController = new AnimatorOverrideController(animator.runtimeAnimatorController);
             var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
             overrideController.GetOverrides(overrides);
 

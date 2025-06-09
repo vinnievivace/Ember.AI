@@ -23,6 +23,7 @@ namespace EmberAI.Core.Util
             if (UseNewInputSystem && Mouse.current != null) return Mouse.current.leftButton.isPressed;
             #endif
             return Input.GetMouseButton(0);
+            
         }
 
         public static bool IsRightMouseDown()
@@ -31,6 +32,7 @@ namespace EmberAI.Core.Util
             if (UseNewInputSystem && Mouse.current != null) return Mouse.current.rightButton.isPressed;
             #endif
             return Input.GetMouseButtonDown(1);
+            
         }
 
         public static bool IsKeyDown(KeyCode keyCode)
@@ -46,6 +48,7 @@ namespace EmberAI.Core.Util
             }
             #endif
             return Input.GetKey(keyCode);
+            
         }
 
         public static bool WasKeyPressed(KeyCode keyCode)
@@ -61,12 +64,59 @@ namespace EmberAI.Core.Util
             }
             #endif
             return Input.GetKeyDown(keyCode);
+            
+        }
+        
+        public static float GetAxis(string axisName)
+        {
+            #if ENABLE_INPUT_SYSTEM
+            if (UseNewInputSystem)
+            {
+                switch (axisName)
+                {
+                    case "Horizontal":
+                        return Keyboard.current != null
+                            ? (Keyboard.current.aKey.isPressed ? -1f : 0f) +
+                              (Keyboard.current.dKey.isPressed ? 1f : 0f)
+                            : 0f;
+
+                    case "Vertical":
+                        return Keyboard.current != null
+                            ? (Keyboard.current.sKey.isPressed ? -1f : 0f) +
+                              (Keyboard.current.wKey.isPressed ? 1f : 0f)
+                            : 0f;
+
+                    case "Mouse X":
+                        return Mouse.current?.delta.x.ReadValue() ?? 0f;
+
+                    case "Mouse Y":
+                        return Mouse.current?.delta.y.ReadValue() ?? 0f;
+
+                    case "Mouse ScrollWheel":
+                        return Mouse.current?.scroll.y.ReadValue() ?? 0f;
+
+                    default:
+                        Debug.LogWarning($"[InputUtil] Axis '{axisName}' not supported in Input System.");
+                        return 0f;
+                }
+            }
+            #endif
+            return Input.GetAxis(axisName);
+        }
+
+        public static Vector2 GetMouseAxis()
+        {
+            return new Vector2(GetAxis("Mouse X"), GetAxis("Mouse Y"));
+        }
+
+        public static float GetMouseScroll()
+        {
+            return GetAxis("Mouse ScrollWheel");
         }
 
         public static bool AnyCurrentInput()
         {
-            if (UIManager.Instance != null && UIManager.Instance.UIInteraction)
-                return false;
+            if (UIManager.Instance != null && UIManager.Instance.UIInteraction) return false;
 
             bool hasInput = false;
 
@@ -100,7 +150,6 @@ namespace EmberAI.Core.Util
                 }
             }
             #endif
-
             // Legacy fallback
             if (!hasInput &&
                 (Input.anyKey ||
@@ -119,6 +168,7 @@ namespace EmberAI.Core.Util
             }
 
             return Time.time - _lastInputTime < InputCooldownDuration;
+            
         }
     }
 }

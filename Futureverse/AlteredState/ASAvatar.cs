@@ -1,13 +1,15 @@
-#if HDRP_ENABLED
-using Core;
-using EmberAI.Envrionment;
-using UnityEngine.Rendering.HighDefinition;
+using EmberAI;
+using EmberAI.Attributes;
+using EmberAI.Core.Util;
+using UnityEngine;
+using UnityEngine.Serialization;
 
-
-namespace EmberAI.HDRP
+namespace Futureverse.AlteredState
 {
-    
-    public class HDEnvironmentAddon : EmberSingleton<HDEnvironmentAddon>
+    /// <summary>
+    /// <see cref="ASAvatar"/> combines an <see cref="ASForm"/> with an <see cref="ASMBrain"/> to create an intelligent agent.
+    /// </summary>
+    public class ASAvatar : EmberBehaviour
     {
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
 
@@ -19,7 +21,12 @@ namespace EmberAI.HDRP
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        private HDAdditionalLightData _sunLightData;
+        [BoxGroup("Components")]
+        public ASForm Form;
+        
+        [BoxGroup("Components"), SerializeField]
+        public ASMBrain Brain;
+        
         
         #endregion
 
@@ -39,33 +46,17 @@ namespace EmberAI.HDRP
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
-        {
-            base.InitializeDependencies();
-            
-            description = "Singleton  additional HDRP specific environmental handling";
-        }
-        
         #endregion
 
         #region MonoBehaviours .........................................................................................
 
-        protected override void OnAwake()
-        {
-            base.OnAwake();
-            
-            if(EnvironmentManager.Instance == null) throw new System.Exception("EnvironmentManager is missing");
-            
-            if(EnvironmentManager.Instance.Sun == null) throw new System.Exception("EnvironmentManager.Sun is missing");
-            
-            _sunLightData = EnvironmentManager.Instance.Sun.GetComponent<HDAdditionalLightData>();
-        }
-
         protected override void OnUpdate()
         {
             base.OnUpdate();
+            
+            if(Form == null) return;
 
-            _sunLightData.shadowDimmer = EnvironmentManager.Instance.ShadowStrength;
+            Form.ControllerSystem.lookAtEnabled = Brain != null;
         }
 
         #endregion
@@ -78,7 +69,6 @@ namespace EmberAI.HDRP
 
         #endregion
 
-        #endregion
+#endregion
     }
 }
-#endif

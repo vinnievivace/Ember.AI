@@ -318,14 +318,11 @@ namespace EmberAI.Editor
         
         private BoxGroupAttribute GetBoxGroupAttribute(SerializedProperty property)
         {
-            FieldInfo field = GetFieldInfoFromProperty(property);
+            FieldInfo field = EditorLayoutUtils.GetFieldInfoByNameInTypeHierarchy(target.GetType(), property.name);
             
-            if (field == null) return null;
-
-            BoxGroupAttribute attr = (BoxGroupAttribute)Attribute.GetCustomAttribute(field, typeof(BoxGroupAttribute));
-            
-            return attr;
+            return field != null ? field.GetCustomAttribute<BoxGroupAttribute>() : null;
         }
+
 
         private FieldInfo GetFieldInfoFromProperty(SerializedProperty prop)
         {

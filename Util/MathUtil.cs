@@ -47,6 +47,11 @@ namespace EmberAI.Core.Util
             return (float)scaled;
               
         }
+
+        public static Vector3 GetRandomVector3(float min, float max)
+        {
+            return new Vector3(GetRandomNumber(min, max), GetRandomNumber(min, max), GetRandomNumber(min, max));
+        }
         
         #endregion
         

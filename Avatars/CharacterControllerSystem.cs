@@ -2,7 +2,6 @@ using System;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using EmberAI.Envrionment;
-using EmberAI.UI;
 using JetBrains.Annotations;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -55,7 +54,13 @@ namespace EmberAI.Avatars
         private AudioClip footStep, footStepAlt, landJump;
 
         [BoxGroup("Look At"), SerializeField]
+        public bool lookAtEnabled = true;
+        
+        [BoxGroup("Look At"), SerializeField]
         private Transform lookAtTarget;
+        
+        [BoxGroup("Loo At")]
+        public Vector3 lookAtOffset = new Vector3(0f, 0f, 0f);
         
         [BoxGroup("Look At"), SerializeField]
         private float lookAtSpeed = 8, lookAtHorizontalClamp = 60, lookAtVerticalClamp = 50;
@@ -114,7 +119,7 @@ namespace EmberAI.Avatars
             // (You can set slopeLimit in the Inspector or here:
             //  controller.slopeLimit = settings.slopeLimit; // if you expose it in CharacterSettings
             
-
+            
             ApplySettings();
         }
 
@@ -168,13 +173,15 @@ namespace EmberAI.Avatars
 
         private void OnAnimatorIK(int layerIndex)
         {
-            if (avatarAnimator == null || lookAtTarget == null || headTransform == null) 
-                return;
-            
+            if (!lookAtEnabled) return;
+            if (avatarAnimator == null || lookAtTarget == null || headTransform == null) return;
+
+            // Apply offset in world space
+            Vector3 targetPosition = lookAtTarget.position + lookAtOffset;
+
             // Calculate world direction from head to target
-            Vector3 worldDir = lookAtTarget.position - headTransform.position;
-            if (worldDir.sqrMagnitude < 0.0001f) 
-                return;
+            Vector3 worldDir = targetPosition - headTransform.position;
+            if (worldDir.sqrMagnitude < 0.0001f) return;
 
             // Convert to head's local space
             Quaternion headRot = headTransform.rotation;
@@ -188,28 +195,22 @@ namespace EmberAI.Avatars
             // Clamp within horizontal and vertical angles
             float clampedYaw   = Mathf.Clamp(localEuler.y, -lookAtHorizontalClamp, lookAtHorizontalClamp);
             float clampedPitch = Mathf.Clamp(localEuler.x, -lookAtVerticalClamp, lookAtVerticalClamp);
-            
-            bool withinYaw   = Math.Abs(localEuler.y) <= lookAtHorizontalClamp;
-            bool withinPitch = Math.Abs(localEuler.x) <= lookAtVerticalClamp;
 
-            Quaternion targetLocal;
-            if (withinYaw && withinPitch)
-            {
-                targetLocal = Quaternion.Euler(clampedPitch, clampedYaw, 0f);
-            }
-            else
-            {
-                targetLocal = Quaternion.identity;
-            }
+            bool withinYaw   = Mathf.Abs(localEuler.y) <= lookAtHorizontalClamp;
+            bool withinPitch = Mathf.Abs(localEuler.x) <= lookAtVerticalClamp;
+
+            Quaternion targetLocal = (withinYaw && withinPitch)
+                ? Quaternion.Euler(clampedPitch, clampedYaw, 0f)
+                : Quaternion.identity;
 
             // Smoothly interpolate stored IK rotation toward targetLocal
             float factor = lookAtSpeed * Time.deltaTime;
-            Quaternion smoothedLocal = Quaternion.Slerp(_headIKRotation, targetLocal, factor);
-            _headIKRotation = smoothedLocal;
+            _headIKRotation = Quaternion.Slerp(_headIKRotation, targetLocal, factor);
 
             // Apply via Animator IK
-            avatarAnimator.Animator.SetBoneLocalRotation(HumanBodyBones.Head, smoothedLocal);
+            avatarAnimator.Animator.SetBoneLocalRotation(HumanBodyBones.Head, _headIKRotation);
         }
+
         
         #endregion
 

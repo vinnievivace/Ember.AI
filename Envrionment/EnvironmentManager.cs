@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace EmberAI.Envrionment
 {
-    #if HDRP_ENABLED
+    
     public class EnvironmentManager : EmberSingleton<EnvironmentManager>
     {
         #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
@@ -117,6 +117,17 @@ namespace EmberAI.Envrionment
             }
         }
 
+        /// <summary>
+        /// Retrieves the index of the ground layer based on the associated layer mask in the environment settings.
+        /// </summary>
+        /// <returns>
+        /// The index of the ground layer as an integer, calculated from the layer mask defined in the environment settings.
+        /// </returns>
+        public int GetGroundLayerIndex()
+        {
+            return Mathf.RoundToInt(Mathf.Log(Settings.GroundLayer.value, 2));
+        }
+
         #endregion
 
         #region Event Handlers .........................................................................................
@@ -125,5 +136,4 @@ namespace EmberAI.Envrionment
 
         #endregion
     }
-    #endif
 }

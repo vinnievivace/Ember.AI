@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using EmberAI.Attributes;
 using EmberAI.Attributes.EmberAI.Attributes;
 using UnityEditor;
 using UnityEngine;
@@ -103,6 +102,37 @@ namespace EmberAI.Editor
 
                 EditorGUILayout.Space(6);
             }
+        }
+
+
+        /// <summary>
+        /// Retrieves FieldInfo for a field in a target type based on the property path of the specified SerializedProperty.
+        /// </summary>
+        /// <param name="targetType">The target type containing the fields referred to by the property path.</param>
+        /// <param name="property">The SerializedProperty whose property path is used to locate the field.</param>
+        /// <returns>The FieldInfo corresponding to the field in the target type, or null if the field cannot be found.</returns>
+        public static FieldInfo GetFieldInfoByNameInTypeHierarchy(Type type, string fieldName)
+        {
+            while (type != null)
+            {
+                // search all instance fields, private and public, declared only at this level
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly;
+                var fields = type.GetFields(flags);
+
+                foreach (var field in fields)
+                {
+                    if (field.Name == fieldName)
+                        return field;
+
+                    // Unity internally serializes private fields using backing name sometimes: "<myField>k__BackingField"
+                    if (field.Name.Contains("k__BackingField") && field.Name.Contains(fieldName))
+                        return field;
+                }
+
+                type = type.BaseType;
+            }
+
+            return null;
         }
     }
 }

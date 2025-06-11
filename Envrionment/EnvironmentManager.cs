@@ -17,10 +17,10 @@ namespace EmberAI.Envrionment
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        [BoxGroup("Settings"), SerializeField, OnValueChanged(nameof(ApplySettings))]
+        [BoxGroup("Settings"), SerializeField, OnValueChanged(nameof(DoApplySettings))]
         private EnvironmentSettings Settings;
 
-        [BoxGroup("Lighting"), SerializeField, OnValueChanged(nameof(ApplySettings))] 
+        [BoxGroup("Lighting"), SerializeField, OnValueChanged(nameof(DoApplySettings))] 
         private Light sun, avatarSpot;
         
         #endregion
@@ -55,6 +55,11 @@ namespace EmberAI.Envrionment
             documentation += "- Set Rendering LayerMask to match, on all target Renderers" + "\n";
             
             return documentation;
+        }
+
+        private void DoApplySettings()
+        {
+            ApplySettings(Settings);
         }
 
         #endregion

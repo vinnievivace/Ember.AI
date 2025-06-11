@@ -1,6 +1,8 @@
 using EmberAI;
 using EmberAI.Attributes;
+using EmberAI.Core;
 using EmberAI.Core.Util;
+using EmberAI.Futureverse.AssetRegistry;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -21,11 +23,18 @@ namespace Futureverse.AlteredState
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
+        // custom animator params, extend the core params defined in <see cref="EmberAI.Avatars.AvatarAnimator"/>
+        private static readonly int HasBrainID = Animator.StringToHash("HasBrain");
+        
         [BoxGroup("Components")]
         public ASForm Form;
         
         [BoxGroup("Components"), SerializeField]
-        public ASMBrain Brain;
+        private ASMBrain Brain;
+        
+        [BoxGroup("Components"), SerializeField, ReadOnly]
+        [Tooltip("Reference to the Forms Animator")]
+        private Animator Animator;
         
         
         #endregion
@@ -46,6 +55,13 @@ namespace Futureverse.AlteredState
 
         #region Initialization .........................................................................................
 
+        public override void InitializeDependencies()
+        {
+            base.InitializeDependencies();
+
+            if (Form != null) Animator = Form.GetComponent<Animator>();
+        }
+
         #endregion
 
         #region MonoBehaviours .........................................................................................
@@ -57,12 +73,20 @@ namespace Futureverse.AlteredState
             if(Form == null) return;
 
             Form.ControllerSystem.lookAtEnabled = Brain != null;
+            
+            if(Animator != null) Animator.SetBool(HasBrainID, Brain != null);
         }
 
         #endregion
 
         #region General ................................................................................................
 
+        public void InitializeBrain(AssetItem data)
+        {
+            Brain = this.GetOrAddComponent<ASMBrain>();
+        }
+        
+        
         #endregion
 
         #region Event Handlers .........................................................................................

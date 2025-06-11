@@ -100,10 +100,6 @@ namespace EmberAI.UI
             
             IsSelected = value;
             
-            Debug.Log($"Selected: {LabelTXT.text} {value}");
-
-            
-            
         }
 
         #endregion

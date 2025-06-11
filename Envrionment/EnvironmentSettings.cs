@@ -37,8 +37,10 @@ namespace EmberAI.Envrionment
         [BoxGroup("Avatar Light")]
         public int avatarLightIntensity = 6500, avatarLightTemperature = 5000;
 
-        [BoxGroup("Avatar Light")] 
-        public float avatarLightWidth = 1.5f, avatarLightHeight = 5, avatarLightDistance = 5, avatarLightYOffset = 1.5f;
+        // NOTE - these values important when camera movement lags behind the moving avatar due to follow speed.
+        // having a bigger 'box' (width/height) and a distance of zero ensure the avatar stays within the light area.
+        [BoxGroup("Avatar Light")]
+        public float avatarLightWidth = 10f, avatarLightHeight = 10, avatarLightDistance = 0, avatarLightYOffset = 1.5f;
 
         #endregion
 

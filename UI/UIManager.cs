@@ -74,6 +74,10 @@ namespace EmberAI.UI
 
         public void DiscoverUIComponents()
         {
+            foreach (UIBehaviour uiBehaviour in FindObjectsByType<UIBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                uiBehaviour.GetOrAddComponent<UIInteractionDetector>();
+            }
             foreach (TMP_InputField inputField in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 inputField.GetOrAddComponent<UIInteractionDetector>();

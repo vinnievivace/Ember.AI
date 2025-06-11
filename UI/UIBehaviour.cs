@@ -18,6 +18,7 @@ namespace EmberAI.UI
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
         private bool _panelsVisible;
+        private Tween _activeTween;
         
         [BoxGroup("Settings"), SerializeField]
         private Vector2 visiblePosition, hiddenPosition;
@@ -76,7 +77,9 @@ namespace EmberAI.UI
         {
             if (tween)
             {
-                TweenUtil.TweenVector2(rectTransform.anchoredPosition, position, UIToggleDuration, p => rectTransform.anchoredPosition = p, () => { });
+                _activeTween?.Cancel();
+
+                _activeTween = TweenUtil.TweenVector2(rectTransform.anchoredPosition, position, UIToggleDuration, p => rectTransform.anchoredPosition = p, () => { });
             }
             else
             {

@@ -28,14 +28,17 @@ namespace EmberAI.Envrionment
         [Range(0,1)]
         public float shadowStrength = 0.5f;
         
-        [BoxGroup("AvatarSpot")] 
+        [BoxGroup("Avatar Light")]
+        public LightType avatarLightType = LightType.Box;
+        
+        [BoxGroup("Avatar Light"), Tooltip("Only applicable when using HDRP")] 
         public RenderingLayerMask AvatarLightLayer;
         
-        [BoxGroup("AvatarSpot")]
-        public int avatarSpotIntensity = 6500, avatarSpotTemperature = 5000;
+        [BoxGroup("Avatar Light")]
+        public int avatarLightIntensity = 6500, avatarLightTemperature = 5000;
 
-        [BoxGroup("AvatarSpot")] 
-        public float avatarSpotWidth = 1.5f, avatarSpotHeight = 5, avatarSpotDistance = 5, avatarSpotYOffset = 1.5f;
+        [BoxGroup("Avatar Light")] 
+        public float avatarLightWidth = 1.5f, avatarLightHeight = 5, avatarLightDistance = 5, avatarLightYOffset = 1.5f;
 
         #endregion
 

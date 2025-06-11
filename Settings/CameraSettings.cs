@@ -59,7 +59,7 @@ namespace EmberAI.Settings
 	    
 	    [BoxGroup("Rotation")]
 	    //[PropertyRange(0,10)]
-	    public float rotationSpeed = 2;
+	    public float rotationSpeed = 1.5f;
 	    
 	    [BoxGroup("Rotation")]
 	    //[PropertyRange(0, 5)]
@@ -67,7 +67,7 @@ namespace EmberAI.Settings
 	    
 	    [BoxGroup("Rotation"), Tooltip("For keyboard or auto rotation, adjust the base rotation speed.")] 
 	    [Range(0,1)]
-	    public float nonMouseRotationModifier = 1f;
+	    public float nonMouseRotationModifier = 0.2f;
 
 	    
 	    [BoxGroup("Zoom")] 

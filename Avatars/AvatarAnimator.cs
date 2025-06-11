@@ -156,7 +156,7 @@ namespace EmberAI.Avatars
             //CacheBoneBaseRotations();
 
             // 3) Apply any spotlight logic (unchanged)
-            EnvironmentManager.Instance.ApplySpotLighting(this);
+            EnvironmentManager.Instance.ApplyAvatarLighting(this);
         }
 
         private void ApplyOverrideAnimation(AnimationClip clip, AnimatorState state,

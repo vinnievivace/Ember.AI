@@ -103,14 +103,14 @@ namespace EmberAI.Envrionment
 
             if (avatarSpot != null)
             {
-                avatarSpot.intensity = Settings.avatarSpotIntensity;
-                avatarSpot.type = LightType.Box;
-                avatarSpot.areaSize = new Vector2(Settings.avatarSpotWidth, Settings.avatarSpotHeight);
+                avatarSpot.intensity = Settings.avatarLightIntensity;
+                avatarSpot.type = Settings.avatarLightType;
+                avatarSpot.areaSize = new Vector2(Settings.avatarLightWidth, Settings.avatarLightHeight);
                 
-                avatarSpot.transform.localPosition = new Vector3(0, Settings.avatarSpotYOffset, Settings.avatarSpotDistance);
+                avatarSpot.transform.localPosition = new Vector3(0, Settings.avatarLightYOffset, Settings.avatarLightDistance);
                 avatarSpot.renderingLayerMask = Settings.AvatarLightLayer;
                 avatarSpot.useColorTemperature = true;
-                avatarSpot.colorTemperature = Settings.avatarSpotTemperature;
+                avatarSpot.colorTemperature = Settings.avatarLightTemperature;
             }
         }
         
@@ -121,7 +121,7 @@ namespace EmberAI.Envrionment
         /// The GameObject to which the spot lighting settings should be applied. All Renderer components
         /// in the children of this GameObject will have their rendering layer mask updated.
         /// </param>
-        public void ApplySpotLighting(Component target)
+        public void ApplyAvatarLighting(Component target)
         {
             foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>())
             {

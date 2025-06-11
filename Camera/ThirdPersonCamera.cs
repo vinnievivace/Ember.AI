@@ -16,6 +16,9 @@ namespace EmberAI.Cameras
         // smoothing & zoom
         private float _targetZoomDistance, _currentZoomVelocity, _currentRotationVelocityX, _currentRotationVelocityY;
         private Vector3 _smoothPosition;
+        private float _lastAppliedDeltaX = 0f;
+        private float _lastAppliedDeltaY = 0f;
+
 
         // blocking & spring-arm
         private float _blockedDistance = 10f;
@@ -240,64 +243,56 @@ namespace EmberAI.Cameras
             return (_targetZoomDistance - Settings.defaultDistance) * deltaTime;
         }
 
+        private Vector2 _rawRotationInput = Vector2.zero;
+
         private Vector2 GetRotationInput()
         {
-            Vector2 targetRotation = Vector2.zero;
-            if (Settings.rotationMode == RotationMode.AutoLeft)
+            Vector2 input = Vector2.zero;
+            bool hasKeyboardInput = false;
+
+            // Keyboard input takes priority over everything else
+            if (InputUtil.IsKeyDown(Settings.rotateLeftKey))  { input.x += 1f; hasKeyboardInput = true; }
+            if (InputUtil.IsKeyDown(Settings.rotateRightKey)) { input.x -= 1f; hasKeyboardInput = true; }
+            if (InputUtil.IsKeyDown(Settings.rotateUpKey))    { input.y += 1f; hasKeyboardInput = true; }
+            if (InputUtil.IsKeyDown(Settings.rotateDownKey))  { input.y -= 1f; hasKeyboardInput = true; }
+
+            if (hasKeyboardInput)
             {
-                targetRotation.x = -Settings.rotationSpeed * Settings.nonMouseRotationModifier;
+                input *= Settings.rotationSpeed * Settings.nonMouseRotationModifier;
+            }
+            else if (Settings.rotationMode == RotationMode.AutoLeft)
+            {
+                input.x = -Settings.rotationSpeed * Settings.nonMouseRotationModifier;
             }
             else if (Settings.rotationMode == RotationMode.AutoRight)
             {
-                targetRotation.x = Settings.rotationSpeed * Settings.nonMouseRotationModifier;
+                input.x = Settings.rotationSpeed * Settings.nonMouseRotationModifier;
             }
-            else
+            else if (
+                Settings.rotationMode == RotationMode.Always ||
+                (Settings.rotationMode == RotationMode.LeftMouseButton  && InputUtil.IsLeftMouseDown()) ||
+                (Settings.rotationMode == RotationMode.RightMouseButton && InputUtil.IsRightMouseDown()))
             {
-                if (Settings.rotationMode == RotationMode.Always ||
-                    (Settings.rotationMode == RotationMode.LeftMouseButton  && InputUtil.IsLeftMouseDown()) ||
-                    (Settings.rotationMode == RotationMode.RightMouseButton && InputUtil.IsLeftMouseDown()))
-                {
-                    targetRotation = InputUtil.GetMouseAxis();
-                }
-                
-                bool isKeyRot = false;
-
-                if (InputUtil.IsKeyDown(Settings.rotateLeftKey))
-                {
-                    isKeyRot = true; targetRotation.x =  1;
-                }
-                else if (InputUtil.IsKeyDown(Settings.rotateRightKey))
-                {
-                    isKeyRot = true; targetRotation.x = -1;
-                }
-
-                if (InputUtil.IsKeyDown(Settings.rotateUpKey))
-                {
-                    isKeyRot = true; targetRotation.y =  1;
-                }
-                else if (InputUtil.IsKeyDown(Settings.rotateDownKey))
-                {
-                    isKeyRot = true; targetRotation.y = -1;
-                }
-                
-                targetRotation *= Settings.rotationSpeed;
-                
-                if (isKeyRot) targetRotation *= Settings.nonMouseRotationModifier;
+                input = InputUtil.GetMouseAxis() * Settings.rotationSpeed;
             }
 
-            XRotation = Mathf.SmoothDamp(XRotation, XRotation + targetRotation.x, ref _currentRotationVelocityX, Settings.mouseRotateSmoothness);
-            YRotation = Mathf.SmoothDamp(YRotation, YRotation - targetRotation.y, ref _currentRotationVelocityY, Settings.mouseRotateSmoothness);
-            YRotation = ClampAngle(YRotation, Settings.rotationRange.x, Settings.rotationRange.y);
-            
-            return targetRotation;
+            _rawRotationInput = input;
+            return input;
         }
 
-        private void SetRotation(Vector2 rotation)
+        private void SetRotation(Vector2 _)
         {
-            if (rotation.x > 5 || rotation.y > 5) return;
-            XRotation += rotation.x * Settings.rotationSpeed;
-            YRotation = ClampAngle(YRotation - rotation.y * Settings.rotationSpeed, Settings.rotationRange.x, Settings.rotationRange.y);
+            float smoothedDeltaX = Mathf.SmoothDamp(_lastAppliedDeltaX, _rawRotationInput.x, ref _currentRotationVelocityX, Settings.mouseRotateSmoothness);
+            float smoothedDeltaY = Mathf.SmoothDamp(_lastAppliedDeltaY, _rawRotationInput.y, ref _currentRotationVelocityY, Settings.mouseRotateSmoothness);
+
+            XRotation += smoothedDeltaX;
+            YRotation = ClampAngle(YRotation - smoothedDeltaY, Settings.rotationRange.x, Settings.rotationRange.y);
+
+            _lastAppliedDeltaX = smoothedDeltaX;
+            _lastAppliedDeltaY = smoothedDeltaY;
         }
+
+
 
         private void CalculateTargetRotation(float deltaTime)
         {

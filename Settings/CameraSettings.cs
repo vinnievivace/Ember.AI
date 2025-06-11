@@ -43,7 +43,7 @@ namespace EmberAI.Settings
 	    [BoxGroup("Position")]
 	    [Tooltip("Smooth follow speed")]
 	    [Range(0,10)]
-	    public float followSpeed = 10f;
+	    public float followSpeed = 3f;
 	    
 	    
 	    [BoxGroup("Rotation")]
@@ -59,7 +59,7 @@ namespace EmberAI.Settings
 	    
 	    [BoxGroup("Rotation")]
 	    //[PropertyRange(0,10)]
-	    public float rotationSpeed = 5f;
+	    public float rotationSpeed = 2;
 	    
 	    [BoxGroup("Rotation")]
 	    //[PropertyRange(0, 5)]
@@ -67,7 +67,7 @@ namespace EmberAI.Settings
 	    
 	    [BoxGroup("Rotation"), Tooltip("For keyboard or auto rotation, adjust the base rotation speed.")] 
 	    [Range(0,1)]
-	    public float nonMouseRotationModifier = 0.01f;
+	    public float nonMouseRotationModifier = 1f;
 
 	    
 	    [BoxGroup("Zoom")] 

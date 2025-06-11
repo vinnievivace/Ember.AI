@@ -18,6 +18,8 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         public Action OnCollectionsLoaded;
         public Action<string, List<AssetItem>> OnAssetsLoaded;
+
+        public Action<string> OnError;
         
         #endregion
 
@@ -67,12 +69,6 @@ namespace EmberAI.Futureverse.AssetRegistry
         [BoxGroup("Settings"), SerializeField, ReadOnly]
         private string AREndPoint = "https://ar-api.futureverse.app/graphql";
         
-        [BoxGroup("Settings"), SerializeField]
-        private string _TRNAddress = "0xfFffFfff00000000000000000000000000001297";
-
-        [BoxGroup("Settings"), SerializeField]
-        private string _EOAAddress = "0xbC2561EcdaD28555e686303D71d446706f204A12";
-        
         #endregion
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
@@ -102,34 +98,9 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region MonoBehaviours .........................................................................................
 
-        private void OnEnable()
-        {
-            FPAuthManager.Instance.OnLoginComplete += OnFPLoginComplete;
-        }
-
-        private void OnDisable()
-        {
-            FPAuthManager.Instance.OnLoginComplete -= OnFPLoginComplete;
-        }
-
         #endregion
 
         #region General ................................................................................................
-
-        private void Initialize()
-        {
-            if (FPAuthManager.Instance.Authenticated)
-            {
-                _TRNAddress = FPAuthManager.Instance.TRNAddress;
-                _EOAAddress = FPAuthManager.Instance.ETHAddress;
-            }
-            else
-            {
-                throw new Exception("FuturePass not authenticated, unable to initialize AssetRegistryManager");
-            }
-        }
-        
-        
         
         private async Task<TResponse> SendARRequest<TRequest, TResponse>(TRequest graphQLRequest) where TRequest : BaseGraphQLRequest where TResponse : BaseGraphQLResponse, new()
         {
@@ -154,8 +125,8 @@ namespace EmberAI.Futureverse.AssetRegistry
                 return JsonConvert.DeserializeObject<TResponse>(request.downloadHandler.text);
             }
             
-            Log(LogLevel.Error, request.error);
-
+            DispatchEvent(OnError, request.error, LogLevel.Error);;
+            
             return null;
         }
         
@@ -175,19 +146,47 @@ namespace EmberAI.Futureverse.AssetRegistry
             OnCollectionsLoaded?.Invoke();
         }
 
-        public void GetAssets(string collectionId)
+        public void GetAssets(string walletID, string collectionID)
         {
-            GetAssets(new []{_TRNAddress, _EOAAddress}, collectionId);
+            GetAssetsAsync(new []{walletID}, collectionID);
         }
         
-        private async void GetAssets(string[] wallets, string collectionId)
+        public void GetAssets(string[] walletIDs, string collectionID)
         {
-            if(wallets.Length == 0) throw new Exception("No wallets provided");
-            if(collectionId.IsEmptyString()) throw new Exception("No collection ID provided");
+            GetAssetsAsync(walletIDs, collectionID);
+        }
+        
+        private async void GetAssetsAsync(string[] walletIDs, string collectionID)
+        {
+            if (walletIDs.Length == 0 || walletIDs[0] == "")
+            {
+                DispatchEvent(OnError, "No wallets provided", LogLevel.Exception);
+                
+                return;
+            }
+
+            if (collectionID.IsEmptyString())
+            {
+                DispatchEvent(OnError, "No collection ID provided", LogLevel.Exception);
+                
+                return;
+            }
             
-            ARAssetsResponse response = await SendARRequest<ARAssetsRequest, ARAssetsResponse>(new ARAssetsRequest(wallets, new []{collectionId}));
-            
-            if(response == null) throw new Exception("Failed to get collections");
+            ARAssetsResponse response = await SendARRequest<ARAssetsRequest, ARAssetsResponse>(new ARAssetsRequest(walletIDs, new []{collectionID}));
+
+            if (response?.data == null)
+            {
+                DispatchEvent(OnError, "Failed to get assets", LogLevel.Exception);
+                
+                return;
+            }
+
+            if (response.data.assets == null)
+            {
+                DispatchEvent(OnError, "No assets returned", LogLevel.Warning);
+                
+                return;
+            }
             
             var assets = new List<AssetItem>();
             
@@ -202,7 +201,7 @@ namespace EmberAI.Futureverse.AssetRegistry
                     // clumsy, but different collections have different metadata, so not really my clumsy!!
                     if (glbPath.IsEmptyString()) glbPath = edge.node.metadata.properties.model;
 
-                    AssetItem item = new AssetItem(tokenID, imagePath, glbPath, collectionId);
+                    AssetItem item = new AssetItem(tokenID, imagePath, glbPath, collectionID);
                     
                     // various optional fields
                     item.TransparentImagePath = edge.node.metadata.properties.image_transparent;
@@ -217,7 +216,7 @@ namespace EmberAI.Futureverse.AssetRegistry
 
             if (assets.Count == 0)
             {
-                Log(LogLevel.Warning, "no assets found for collection " + collectionId);
+                Log(LogLevel.Warning, "no assets found for collection " + collectionID);
             }
             else
             {
@@ -290,11 +289,6 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region Event Handlers .........................................................................................
 
-        private void OnFPLoginComplete()
-        {
-            Initialize();
-        }
-        
         #endregion
 
 #endregion

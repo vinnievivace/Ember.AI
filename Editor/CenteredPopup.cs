@@ -3,11 +3,31 @@ using UnityEngine;
 
 public class CenteredPopup : EditorWindow
 {
+    #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
+
+    #endregion
+
+    #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
+
+    #endregion
+
+    #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
+
     private string _message;
     private const float WIDTH = 600;
     private const float HEIGHT = 240;
     private static readonly Color HeaderColor = new Color(0.12f, 0.12f, 0.12f, 1f);
     private static readonly Color HeaderTextColor = Color.white;
+    
+    #endregion
+
+    #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
+
+    #endregion
+
+    #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    #region Static .................................................................................................
 
     public static void Show(string title, string message)
     {
@@ -25,6 +45,18 @@ public class CenteredPopup : EditorWindow
 
         popup.ShowPopup();
     }
+    
+    #endregion
+
+    #region Inspector ..............................................................................................
+
+    #endregion
+
+    #region Initialization .........................................................................................
+
+    #endregion
+
+    #region General ................................................................................................
 
     private void OnGUI()
     {
@@ -42,4 +74,18 @@ public class CenteredPopup : EditorWindow
         
         if (GUILayout.Button("Close", GUILayout.Height(24))) Close();
     }
+    
+    #endregion
+
+    #region Event Handlers .........................................................................................
+
+    #endregion
+
+    #endregion
+    
+    
+
+    
+
+    
 }

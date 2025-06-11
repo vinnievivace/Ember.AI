@@ -27,6 +27,7 @@ namespace EmberAI.Futureverse.FuturePass
         public static event Action<Dictionary<string, string>> FinalResponse = delegate { };
 
         public event Action OnLoginComplete;
+        public event Action<string> OnError; 
         
         #endregion
 
@@ -85,6 +86,8 @@ namespace EmberAI.Futureverse.FuturePass
         public bool Authenticated => !accessToken.IsEmptyString();
         public string TRNAddress { get; private set; }
         public string ETHAddress { get; private set; }
+        
+        public string[] WalletIDs => new[] { TRNAddress, ETHAddress };
         
         #endregion
 
@@ -183,25 +186,26 @@ namespace EmberAI.Futureverse.FuturePass
             // Checks for errors.
             if (context.Request.QueryString.Get("error") != null)
             {
-                Console.Write($"OAuth authorization error: {context.Request.QueryString.Get("error")}.");
+                DispatchEvent(OnError, $"OAuth authorization error: {context.Request.QueryString.Get("error")}.", LogLevel.Error);
+                
                 return;
             }
             
-            if (context.Request.QueryString.Get("code") == null ||
-                context.Request.QueryString.Get("state") == null)
+            if (context.Request.QueryString.Get("code") == null || context.Request.QueryString.Get("state") == null)
             {
-                Console.Write("Malformed authorization response. " + context.Request.QueryString);
+                DispatchEvent(OnError, "Malformed authorization response. " + context.Request.QueryString, LogLevel.Error);
+                
                 return;
             }
 
             // extracts the code
             string incomingState = context.Request.QueryString.Get("state");
 
-            // Compares the received state to the expected value, to ensure that
-            // this app made the request which resulted in authorization.
+            // Compares the received state to the expected value, to ensure that this app made the request which resulted in authorization.
             if (incomingState != state)
             {
-                Console.Write($"Received request with invalid state ({incomingState})");
+                DispatchEvent(OnError, $"Received request with invalid state ({incomingState})", LogLevel.Error);
+                
                 return;
             }
 

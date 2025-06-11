@@ -12,7 +12,7 @@ namespace EmberAI
 
         #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
 
-        protected enum LogLevel { Log, Warning, Error };
+        protected enum LogLevel { Log, Warning, Error, Exception };
         
         public enum UpdateMode { Update, FixedUpdate, LateUpdate }
         
@@ -152,7 +152,7 @@ namespace EmberAI
         /// <typeparam name="T"></typeparam>
         protected void DispatchEvent<T>(Action<T> ev, T content, LogLevel type = LogLevel.Log)
         {
-           // if no listeners are assigned, log to console
+           // if no listeners are assigned, log to console, or throw exception
             if (ev == null)
             {
                 Log(type, content.ToString());
@@ -170,6 +170,7 @@ namespace EmberAI
                 case LogLevel.Log: Debug.Log(message); break;
                 case LogLevel.Warning: Debug.LogWarning(message); break;
                 case LogLevel.Error: Debug.LogError(message); break;
+                case LogLevel.Exception: throw new Exception(message);
                 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(level), level, null);

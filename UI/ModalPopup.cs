@@ -105,6 +105,9 @@ namespace EmberAI.UI
         {
             gameObject.SetActive(false);
             
+            headingText.text = string.Empty;
+            messageText.text = string.Empty;
+            
             action1Button.onClick.RemoveAllListeners();
             action2Button.onClick.RemoveAllListeners();
             

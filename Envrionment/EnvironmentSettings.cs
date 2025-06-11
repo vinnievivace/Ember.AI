@@ -1,5 +1,6 @@
 using Core;
 using EmberAI.Attributes;
+using EmberAI.Attributes.EmberAI.Attributes;
 using EmberAI.Core;
 using UnityEngine;
 
@@ -50,6 +51,12 @@ namespace EmberAI.Envrionment
 
         #region Inspector ..............................................................................................
 
+        [ButtonGroup("Tools", "Apply", "Applies the updated settings to the environment")]
+        private void Apply()
+        {
+            EnvironmentManager.Instance.ApplySettings(this);
+        }
+        
         #endregion
 
         #region Initialization .........................................................................................

@@ -17,10 +17,10 @@ namespace EmberAI.Envrionment
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        [BoxGroup("Settings"), SerializeField]
+        [BoxGroup("Settings"), SerializeField, OnValueChanged(nameof(ApplySettings))]
         private EnvironmentSettings Settings;
 
-        [BoxGroup("Lighting"), SerializeField] 
+        [BoxGroup("Lighting"), SerializeField, OnValueChanged(nameof(ApplySettings))] 
         private Light sun, avatarSpot;
         
         #endregion
@@ -76,6 +76,17 @@ namespace EmberAI.Envrionment
         {
             base.OnUpdate();
             
+            ApplySettings(Settings);
+        }
+
+        #endregion
+
+        #region General ................................................................................................
+
+        public void ApplySettings(EnvironmentSettings settings)
+        {
+            Settings = settings;
+            
             if(Settings == null) return;
 
             if (sun != null)
@@ -97,11 +108,7 @@ namespace EmberAI.Envrionment
                 avatarSpot.colorTemperature = Settings.avatarSpotTemperature;
             }
         }
-
-        #endregion
-
-        #region General ................................................................................................
-
+        
         /// <summary>
         /// Applies spot lighting settings to all child renderers of the target GameObject.
         /// </summary>

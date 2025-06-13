@@ -37,6 +37,8 @@ namespace EmberAI.UI
 
         public UISettings Settings => settings;
         
+        public ModalPopup ModalPopup => FindFirstObjectByType<ModalPopup>(FindObjectsInactive.Include);
+        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////

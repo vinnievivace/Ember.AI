@@ -19,6 +19,8 @@ namespace EmberAI.UI
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
+        private static ModalPopup _instance;
+        
         [BoxGroup("Components"), SerializeField]
         private TextMeshProUGUI headingText, messageText;
         
@@ -29,8 +31,6 @@ namespace EmberAI.UI
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
-        public static ModalPopup Instance { get; private set; }
-        
         public bool Active => gameObject.activeSelf;
         
         #endregion
@@ -55,15 +55,6 @@ namespace EmberAI.UI
         {
             base.OnAwake();
 
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-            else
-            {
-                throw new Exception("ModalPopup is a singleton, there can only be one instance at a time.");
-            }
-            
             Hide();
         }
 

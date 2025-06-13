@@ -28,7 +28,7 @@ namespace EmberAI.UI
         private float UIToggleDuration = 0.25f;
         
         [BoxGroup("Components"), ReadOnly, SerializeField]
-        private RectTransform rectTransform;
+        protected RectTransform rectTransform;
         
         [BoxGroup("Components"), ReadOnly, SerializeField]
         private UIStateHandler stateHandler;

@@ -98,6 +98,23 @@ namespace EmberAI.Core.Util
         {
             return source.transform.position + (source.transform.forward * distance) + new Vector3(0,yOffset, 0);
         }
+
+        /// <summary>
+        /// Positions the target relative to the source in the specified direction and distance.
+        /// </summary>
+        /// <param name="source">The source component used as the reference for positioning.</param>
+        /// <param name="target">The target component to be positioned and rotated.</param>
+        /// <param name="targetRotation">The rotation to apply to the target component.</param>
+        /// <param name="targetOffset">The directional offset from the source.</param>
+        /// <param name="targetDistance">The distance from the source to the target.</param>
+        public static void PositionRelativeTo(Component source, Component target, Quaternion targetRotation, Vector3 targetOffset, float targetDistance)
+        {
+            Vector3 offsetDirection = targetRotation * targetOffset.normalized;
+            Vector3 offsetPosition = source.transform.position + offsetDirection * targetDistance;
+
+            target.transform.position = offsetPosition;
+            target.transform.rotation = targetRotation; 
+        }
         
         #endregion
         

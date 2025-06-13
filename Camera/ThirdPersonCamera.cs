@@ -37,7 +37,6 @@ namespace EmberAI.Cameras
         
         // rotation & position targets
         private Quaternion _rotationForSpace = Quaternion.identity;
-        private Quaternion _targetRotation   = Quaternion.identity;
         private Vector3   _targetPosition   = Vector3.zero;
         private Vector3   _lastUp;
         private Vector2 _rawRotationInput = Vector2.zero;
@@ -73,6 +72,10 @@ namespace EmberAI.Cameras
         public bool HasInput { get; private set; }
         
         private Transform RotationSpace => Settings.rotationSpace != null ? Settings.rotationSpace : _target;
+        
+        public Quaternion TargetRotation { get; private set; }   = Quaternion.identity;
+        
+        public Vector3 TargetPosition => _target.position;
         
         #endregion
 
@@ -119,7 +122,7 @@ namespace EmberAI.Cameras
             YRotation           = ClampAngle(angles.x, Settings.rotationRange.x, Settings.rotationRange.y);
 
             _lastUp             = (RotationSpace != null ? RotationSpace.up : Vector3.up);
-            _targetRotation     = Quaternion.Euler(YRotation, XRotation, 0);
+            TargetRotation     = Quaternion.Euler(YRotation, XRotation, 0);
             _targetPosition     = transform.position;
             _cachedRotationSpeed= Settings.rotationSpeed;
             GroundCollisionDetected = false;
@@ -203,7 +206,7 @@ namespace EmberAI.Cameras
 
             // 3) Spring-arm: spherecast from target backward
             Vector3 pivot = _smoothPosition + Vector3.up * Settings.offset.y;
-            Vector3 dir = (_targetRotation * -Vector3.forward);
+            Vector3 dir = (TargetRotation * -Vector3.forward);
             float desiredDist = Mathf.Clamp(DistanceTarget, Settings.minDistance, Settings.maxDistance);
             Vector3 castOrigin = pivot;
             float castDistance = desiredDist + Settings.blockingDetectionRadius;
@@ -235,10 +238,8 @@ namespace EmberAI.Cameras
             GroundCollisionDetected = hitSomething;
 
             // 6) Apply to transform
-            transform.rotation = _targetRotation;
+            transform.rotation = TargetRotation;
             transform.position = _targetPosition;
-            
-            UpdateAvatarLight();
         }
         
         #endregion
@@ -327,12 +328,12 @@ namespace EmberAI.Cameras
 
         private void CalculateTargetRotation(float deltaTime)
         {
-            _targetRotation = Quaternion.AngleAxis(XRotation, Vector3.up) * Quaternion.AngleAxis(YRotation, Vector3.right);
+            TargetRotation = Quaternion.AngleAxis(XRotation, Vector3.up) * Quaternion.AngleAxis(YRotation, Vector3.right);
             var space = RotationSpace;
             if (space != null)
             {
                 _rotationForSpace = Quaternion.FromToRotation(_lastUp, space.up) * _rotationForSpace;
-                _targetRotation = _rotationForSpace * _targetRotation;
+                TargetRotation = _rotationForSpace * TargetRotation;
                 _lastUp = space.up;
             }
         }
@@ -363,23 +364,6 @@ namespace EmberAI.Cameras
         
         #endregion
         
-        #region Avatar Light ...........................................................................................
-        
-        private void UpdateAvatarLight()
-        {
-            if(EnvironmentManager.Instance == null || _target == null) return;
-
-            // Position: use avatar's position + offset rotated by current camera rotation
-            Vector3 offsetDirection = _targetRotation * EnvironmentManager.Instance.AvatarLightOffset.normalized;
-            Vector3 lightPos = _target.position + offsetDirection * EnvironmentManager.Instance.AvatarLightDistance;
-
-            EnvironmentManager.Instance.AvatarSpot.transform.position = lightPos;
-            EnvironmentManager.Instance.AvatarSpot.transform.rotation = _targetRotation; 
-        }
-
-        
-        #endregion
-
         #region Event Handlers .........................................................................................
 
         #endregion

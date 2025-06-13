@@ -1,5 +1,7 @@
 using Core;
 using EmberAI.Attributes;
+using EmberAI.Cameras;
+using EmberAI.Core.Util;
 using UnityEngine;
 
 namespace EmberAI.Envrionment
@@ -111,11 +113,16 @@ namespace EmberAI.Envrionment
                 avatarSpot.type = Settings.avatarLightType;
                 avatarSpot.areaSize = new Vector2(Settings.avatarLightWidth, Settings.avatarLightHeight);
                 
-                // ugly, but ThirdPersonCamera currently controls the positioning logic, need to tidy this up!!
-                //avatarSpot.transform.localPosition = new Vector3(0, Settings.avatarLightOffset, Settings.avatarLightDistance);
                 avatarSpot.renderingLayerMask = Settings.AvatarLightLayer;
                 avatarSpot.useColorTemperature = true;
                 avatarSpot.colorTemperature = Settings.avatarLightTemperature;
+                
+                if(ThirdPersonCamera.Instance == null || ThirdPersonCamera.Instance.Target == null) return;
+                
+                // rotate the avatar spot to always face the avatar (using the Camera Target Rotation) and offset as per settings.
+                Quaternion targetRotation = ThirdPersonCamera.Instance.TargetRotation;
+                
+                TransformUtil.PositionRelativeTo(ThirdPersonCamera.Instance.Target, AvatarSpot, targetRotation, AvatarLightOffset, AvatarLightDistance);
             }
         }
         

@@ -55,9 +55,9 @@ namespace Futureverse.AlteredState
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
 
             if (Form != null) Animator = Form.GetComponent<Animator>();
         }

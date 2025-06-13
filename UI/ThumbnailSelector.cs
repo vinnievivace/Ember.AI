@@ -35,6 +35,9 @@ namespace EmberAI.UI
         [BoxGroup("Settings"), SerializeField]
         private Thumbnail ThumbnailPrefab;
 
+        [BoxGroup("Audio"), Tooltip("when defined, these sounds override the defaults defined in the " + nameof(UISettings))] 
+        public AudioClip customHoverSound, customClickSound;
+
         [BoxGroup("Components"), SerializeField]
         private TextMeshProUGUI labelText;
         
@@ -65,9 +68,9 @@ namespace EmberAI.UI
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
 
             description = "Scrollable Thumbnail Selector UI";
 

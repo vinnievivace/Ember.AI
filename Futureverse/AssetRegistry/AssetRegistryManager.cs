@@ -87,9 +87,9 @@ namespace EmberAI.Futureverse.AssetRegistry
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
             
             description = "Futureverse: AssetRegistry Manager - GraphQL for Wallet contents";
         }

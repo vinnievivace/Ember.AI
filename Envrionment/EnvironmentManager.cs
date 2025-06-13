@@ -66,9 +66,9 @@ namespace EmberAI.Envrionment
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
             
             description = "Singleton for managing environmental settings, lighting etc";
         }

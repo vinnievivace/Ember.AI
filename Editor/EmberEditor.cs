@@ -46,7 +46,7 @@ namespace EmberAI.Editor
 
             foreach (EmberBehaviour ember in FindObjectsByType<EmberBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                ember.InitializeDependencies();
+                ember.EditModeInitialize();
             }
             
         }
@@ -203,6 +203,9 @@ namespace EmberAI.Editor
             
             if(GUI.Button(EditorLayoutUtils.GetButtonRect(0,0.5f), loadButtonContent, EditorLayoutUtils.GetButtonStyle()))
             {
+                // quick hack to double up the button powers, for those times you want to trigger the initialize stuff manually.
+                if(!Application.isPlaying) ember.EditModeInitialize();
+                
                 CenteredPopup.Show(ember.GetType().ToString(), ember.GetDocumentation());
             }
             

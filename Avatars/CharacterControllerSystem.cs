@@ -103,9 +103,9 @@ namespace EmberAI.Avatars
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
 
             controller     = this.GetOrAddComponent<CharacterController>();
             avatarAnimator = this.GetOrAddComponent<AvatarAnimator>();

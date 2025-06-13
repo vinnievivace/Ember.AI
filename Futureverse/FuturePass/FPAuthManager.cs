@@ -103,9 +103,9 @@ namespace EmberAI.Futureverse.FuturePass
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
 
             description = "Futureverse: FuturePass Authentication Manager";
         }

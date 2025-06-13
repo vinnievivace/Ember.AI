@@ -10,9 +10,9 @@ namespace EmberAI.Avatars
     {
         NavMeshAgent _agent;
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
 
             _agent = this.GetOrAddComponent<NavMeshAgent>();
         }

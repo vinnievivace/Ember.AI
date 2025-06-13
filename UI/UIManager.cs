@@ -20,8 +20,14 @@ namespace EmberAI.UI
 
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
-        private List<UIInteractionDetector> _activeUI = new List<UIInteractionDetector>();
+        private readonly List<UIStateHandler> _activeUI = new List<UIStateHandler>();
 
+        [BoxGroup("Settings"), SerializeField]
+        private UISettings settings;
+        
+        [BoxGroup("Components"), SerializeField]
+        private AudioSource audioSource;
+        
         [BoxGroup("State"), ReadOnly] 
         public bool UIInteraction;
         
@@ -29,6 +35,8 @@ namespace EmberAI.UI
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
+        public UISettings Settings => settings;
+        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,11 +51,13 @@ namespace EmberAI.UI
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
             
             description = "Singleton for managing UI functionality";
+            
+            if(audioSource == null) audioSource = this.GetOrAddComponent<AudioSource>();
         }
 
         #endregion
@@ -72,23 +82,37 @@ namespace EmberAI.UI
 
         #region General ................................................................................................
 
+        /// <summary>
+        /// Discovers UI Components that do not inherit from <see cref="UIBehaviour"/> but still need to be handled by the <see cref="UIStateHandler"/>
+        /// </summary>
         public void DiscoverUIComponents()
         {
-            foreach (UIBehaviour uiBehaviour in FindObjectsByType<UIBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                uiBehaviour.GetOrAddComponent<UIInteractionDetector>();
-            }
             foreach (TMP_InputField inputField in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                inputField.GetOrAddComponent<UIInteractionDetector>();
+                inputField.GetOrAddComponent<UIStateHandler>();
             }
             foreach (ScrollRect scrollRect in FindObjectsByType<ScrollRect>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                scrollRect.GetOrAddComponent<UIInteractionDetector>();
+                scrollRect.GetOrAddComponent<UIStateHandler>();
             }
         }
 
-        public void SetActiveStatus(UIInteractionDetector detector, bool value)
+        public void PlayUISound(AudioClip clip)
+        {
+            if(clip == null) return;
+            
+            audioSource.PlayOneShot(clip);
+        }
+
+        public void PlayUISound(UIBehaviour source)
+        {
+            switch (source.StateHandler.State)
+            {
+                
+            }
+        }
+
+        public void SetActiveStatus(UIStateHandler detector, bool value)
         {
             if (value) _activeUI.AddIfNotFound(detector);
             else _activeUI.RemoveIfFound(detector);

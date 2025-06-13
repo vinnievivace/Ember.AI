@@ -75,9 +75,9 @@ namespace EmberAI.Cameras
             Settings.defaultDistance = Mathf.Clamp(Settings.defaultDistance, Settings.minDistance, Settings.maxDistance);
         }
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
             
             _camera = this.GetOrAddComponent<Camera>();
             _camera.fieldOfView = Settings.normalFOV;

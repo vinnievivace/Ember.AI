@@ -51,9 +51,9 @@ namespace EmberAI.Envrionment
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
             
             if(material != null) GeneratePlane(gridSize, material);
 

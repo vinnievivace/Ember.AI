@@ -81,9 +81,9 @@ namespace EmberAI.Avatars
 
         #region INITIALIZATION .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
             description = "Humanoid Avatar Animator.";
             animator = this.GetOrAddComponent<Animator>();
         }

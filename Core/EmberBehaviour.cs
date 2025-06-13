@@ -56,9 +56,9 @@ namespace EmberAI
         /// <summary>
         /// Initialize any dependencies that are instantiated when this component is created. Should only be called in Edit mode.
         /// </summary>
-        public virtual void InitializeDependencies()
+        public virtual void EditModeInitialize()
         {
-            if(Application.isPlaying) return;
+            if(Application.isPlaying) throw new Exception("Cannot initialize in Play mode!");;
             
             if(name is "GameObject" or "") name = "Ember";
             
@@ -135,7 +135,7 @@ namespace EmberAI
 
         protected virtual void OnReset()
         {
-            InitializeDependencies();
+            EditModeInitialize();
         }
         
         

@@ -79,9 +79,9 @@ namespace EmberAI.Core
 
         #region Initialization .........................................................................................
 
-        public override void InitializeDependencies()
+        public override void EditModeInitialize()
         {
-            base.InitializeDependencies();
+            base.EditModeInitialize();
 
             description = "GLB Load / Avatar creation";
 

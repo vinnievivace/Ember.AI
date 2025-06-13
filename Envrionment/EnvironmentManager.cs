@@ -34,6 +34,10 @@ namespace EmberAI.Envrionment
         public float ShadowStrength => Settings.shadowStrength;
         
         public Light AvatarSpot => avatarSpot;
+
+        public Vector3 AvatarLightOffset => Settings.avatarLightOffset;
+        
+        public float AvatarLightDistance => Settings.avatarLightDistance;
         
         #endregion
 
@@ -107,7 +111,8 @@ namespace EmberAI.Envrionment
                 avatarSpot.type = Settings.avatarLightType;
                 avatarSpot.areaSize = new Vector2(Settings.avatarLightWidth, Settings.avatarLightHeight);
                 
-                avatarSpot.transform.localPosition = new Vector3(0, Settings.avatarLightYOffset, Settings.avatarLightDistance);
+                // ugly, but ThirdPersonCamera currently controls the positioning logic, need to tidy this up!!
+                //avatarSpot.transform.localPosition = new Vector3(0, Settings.avatarLightOffset, Settings.avatarLightDistance);
                 avatarSpot.renderingLayerMask = Settings.AvatarLightLayer;
                 avatarSpot.useColorTemperature = true;
                 avatarSpot.colorTemperature = Settings.avatarLightTemperature;

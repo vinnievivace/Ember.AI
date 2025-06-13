@@ -2,24 +2,35 @@ using Core;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using EmberAI.Core.Util;
+using EmberAI.Envrionment;
 using EmberAI.Settings;
 using EmberAI.UI;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace EmberAI.Cameras
 {
     public class ThirdPersonCamera : EmberSingleton<ThirdPersonCamera>
     {
+        #region EVENTS /////////////////////////////////////////////////////////////////////////////////////////////////        
+
+        #endregion
+
+        #region ENUMS //////////////////////////////////////////////////////////////////////////////////////////////////
+
         public enum RotationMode { LeftMouseButton, RightMouseButton, Always, AutoLeft, AutoRight }
+        
+        #endregion
+
+        #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
         // smoothing & zoom
         private float _targetZoomDistance, _currentZoomVelocity, _currentRotationVelocityX, _currentRotationVelocityY;
         private Vector3 _smoothPosition;
         private float _lastAppliedDeltaX = 0f;
         private float _lastAppliedDeltaY = 0f;
-
-
+        
         // blocking & spring-arm
         private float _blockedDistance = 10f;
         private float _blockedDistanceV;
@@ -29,10 +40,9 @@ namespace EmberAI.Cameras
         private Quaternion _targetRotation   = Quaternion.identity;
         private Vector3   _targetPosition   = Vector3.zero;
         private Vector3   _lastUp;
-
+        private Vector2 _rawRotationInput = Vector2.zero;
         private float  _cachedRotationSpeed;
         private float _currentFOVVelocity;
-
         
         [BoxGroup("Settings"), SerializeField, OnValueChanged(nameof(OnChangeSettings))]
         protected ThirdPersonCameraSettings Settings;
@@ -41,12 +51,15 @@ namespace EmberAI.Cameras
         protected Transform _target;
         
         [BoxGroup("Components"), SerializeField]
-        private Camera _camera;
-        
+        private Camera Camera;
         
         [BoxGroup("Debug"), SerializeField, ReadOnly, Tooltip("True when a ground collision is currently detected.")]
         private bool GroundCollisionDetected;
         
+        #endregion
+
+        #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
+
         private float DistanceTarget { get; set; }
         public static bool InputDisabled { get; set; }
         private Vector3 MoveDirection  { get; set; }
@@ -58,30 +71,40 @@ namespace EmberAI.Cameras
         public float ZoomModifier { get; set; }
         
         public bool HasInput { get; private set; }
+        
+        private Transform RotationSpace => Settings.rotationSpace != null ? Settings.rotationSpace : _target;
+        
+        #endregion
 
-        private static float ClampAngle(float angle, float min, float max)
-        {
-            if (angle < -360) angle += 360;
-            if (angle >  360) angle -= 360;
-            return Mathf.Clamp(angle, min, max);
-        }
+        #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
 
-        private Transform RotationSpace =>
-            Settings.rotationSpace != null ? Settings.rotationSpace : _target;
+        #region Static .................................................................................................
+
+        #endregion
+
+        #region Inspector ..............................................................................................
 
         private void OnChangeSettings()
         {
             _cachedRotationSpeed = Settings.rotationSpeed;
             Settings.defaultDistance = Mathf.Clamp(Settings.defaultDistance, Settings.minDistance, Settings.maxDistance);
         }
+        
+        #endregion
+
+        #region Initialization .........................................................................................
 
         public override void EditModeInitialize()
         {
             base.EditModeInitialize();
             
-            _camera = this.GetOrAddComponent<Camera>();
-            _camera.fieldOfView = Settings.normalFOV;
+            Camera = this.GetOrAddComponent<Camera>();
+            Camera.fieldOfView = Settings.normalFOV;
         }
+        
+        #endregion
+
+        #region MonoBehaviours .........................................................................................
 
         protected override void OnAwake()
         {
@@ -135,11 +158,46 @@ namespace EmberAI.Cameras
             if (Settings.updateMode == UpdateMode.LateUpdate)
                 UpdateTransform(Time.deltaTime);
         }
+        
+        #endregion
 
+        #region General ................................................................................................
+
+        private static float ClampAngle(float angle, float min, float max)
+        {
+            if (angle < -360) angle += 360;
+            if (angle >  360) angle -= 360;
+            return Mathf.Clamp(angle, min, max);
+        }
+        
+        protected virtual void CalculateTargetPosition(float deltaTime)
+        {
+            if (_target == null) return;
+            
+            DistanceTarget = Mathf.Clamp(DistanceTarget + MoveDirection.z, Settings.minDistance, Settings.maxDistance);
+            Settings.defaultDistance += (DistanceTarget - Settings.defaultDistance) * Settings.zoomSpeed * deltaTime;
+            _smoothPosition = Settings.smoothFollow ? Vector3.Lerp(_smoothPosition, _target.position, deltaTime * Settings.followSpeed) : _target.position;
+        }
+        
+        public void UpdateInput()
+        {
+            if (!Camera.enabled) return;
+
+            Vector2 rotation = GetRotationInput();
+            float zoom = GetZoomInput(Time.deltaTime);
+            
+            SetRotation(rotation);
+            SetZoomPosition(zoom);
+            
+            HasInput = rotation.sqrMagnitude > 0 || zoom != 0;
+            
+        }
+        
         protected virtual void UpdateTransform(float deltaTime)
         {
             // 1) Compute target rotation
             CalculateTargetRotation(deltaTime);
+           
             // 2) Compute target position (smoothed follow)
             CalculateTargetPosition(deltaTime);
 
@@ -171,7 +229,7 @@ namespace EmberAI.Cameras
 
             // 4) FOV adjustment if too close
             float tFOV = (hitSomething && finalDistance < desiredDist - 0.1f) ? Settings.blockedFOV : Settings.normalFOV;
-            _camera.fieldOfView = Mathf.SmoothDamp(_camera.fieldOfView, tFOV, ref _currentFOVVelocity, Settings.FOVSmoothTime);
+            Camera.fieldOfView = Mathf.SmoothDamp(Camera.fieldOfView, tFOV, ref _currentFOVVelocity, Settings.FOVSmoothTime);
 
             // 5) Track ground collision for debug
             GroundCollisionDetected = hitSomething;
@@ -179,10 +237,14 @@ namespace EmberAI.Cameras
             // 6) Apply to transform
             transform.rotation = _targetRotation;
             transform.position = _targetPosition;
-
             
+            UpdateAvatarLight();
         }
-
+        
+        #endregion
+        
+        #region Rotation ...............................................................................................
+        
         [UsedImplicitly]
         public void SetRotationMode(RotationMode mode)
         {
@@ -192,7 +254,7 @@ namespace EmberAI.Cameras
             if (wasAuto)
             {
                 TweenUtil.TweenFloat(Settings.rotationSpeed, 0, Settings.rotationDuration,
-                                     v => Settings.rotationSpeed = v);
+                    v => Settings.rotationSpeed = v);
             }
 
             if (mode is RotationMode.AutoLeft or RotationMode.AutoRight)
@@ -201,7 +263,7 @@ namespace EmberAI.Cameras
                 {
                     Settings.rotationMode = mode;
                     TweenUtil.TweenFloat(0, _cachedRotationSpeed, Settings.rotationDuration,
-                                         v => Settings.rotationSpeed = v);
+                        v => Settings.rotationSpeed = v);
                 });
             }
             else
@@ -213,38 +275,7 @@ namespace EmberAI.Cameras
                 });
             }
         }
-
-        public void UpdateInput()
-        {
-            if (!_camera.enabled) return;
-
-            Vector2 rotation = GetRotationInput();
-            float zoom = GetZoomInput(Time.deltaTime);
-            
-            SetRotation(rotation);
-            SetMoveDirection(zoom);
-            
-            HasInput = rotation.sqrMagnitude > 0 || zoom != 0;
-            
-        }
-
-        private float GetZoomInput(float deltaTime)
-        {
-            float scroll = InputUtil.GetMouseScroll();
-            
-            if (InputUtil.IsKeyDown(Settings.zoomInKey))  _targetZoomDistance -= Settings.zoomSpeed;
-            else if (InputUtil.IsKeyDown(Settings.zoomOutKey)) _targetZoomDistance += Settings.zoomSpeed;
-
-            if (scroll >  0) _targetZoomDistance -= Settings.zoomSpeed;
-            else if (scroll < 0) _targetZoomDistance += Settings.zoomSpeed;
-
-            _targetZoomDistance = Mathf.Clamp(_targetZoomDistance, Settings.minDistance, Settings.maxDistance);
-            DistanceTarget = Mathf.SmoothDamp(DistanceTarget, _targetZoomDistance, ref _currentZoomVelocity, Settings.mouseZoomSmoothness);
-            return (_targetZoomDistance - Settings.defaultDistance) * deltaTime;
-        }
-
-        private Vector2 _rawRotationInput = Vector2.zero;
-
+        
         private Vector2 GetRotationInput()
         {
             Vector2 input = Vector2.zero;
@@ -305,20 +336,56 @@ namespace EmberAI.Cameras
                 _lastUp = space.up;
             }
         }
-
-        private void SetMoveDirection(float amount)
+        
+        #endregion
+        
+        #region Zoom ...................................................................................................
+        
+        private void SetZoomPosition(float amount)
         {
             MoveDirection = transform.forward * amount;
         }
-
-        protected virtual void CalculateTargetPosition(float deltaTime)
+        
+        private float GetZoomInput(float deltaTime)
         {
-            if (_target == null) return;
-            DistanceTarget = Mathf.Clamp(DistanceTarget + MoveDirection.z, Settings.minDistance, Settings.maxDistance);
-            Settings.defaultDistance += (DistanceTarget - Settings.defaultDistance) * Settings.zoomSpeed * deltaTime;
-            _smoothPosition = Settings.smoothFollow
-                ? Vector3.Lerp(_smoothPosition, _target.position, deltaTime * Settings.followSpeed)
-                : _target.position;
+            float scroll = InputUtil.GetMouseScroll();
+            
+            if (InputUtil.IsKeyDown(Settings.zoomInKey))  _targetZoomDistance -= Settings.zoomSpeed;
+            else if (InputUtil.IsKeyDown(Settings.zoomOutKey)) _targetZoomDistance += Settings.zoomSpeed;
+
+            if (scroll >  0) _targetZoomDistance -= Settings.zoomSpeed;
+            else if (scroll < 0) _targetZoomDistance += Settings.zoomSpeed;
+
+            _targetZoomDistance = Mathf.Clamp(_targetZoomDistance, Settings.minDistance, Settings.maxDistance);
+            DistanceTarget = Mathf.SmoothDamp(DistanceTarget, _targetZoomDistance, ref _currentZoomVelocity, Settings.mouseZoomSmoothness);
+            return (_targetZoomDistance - Settings.defaultDistance) * deltaTime;
         }
+        
+        #endregion
+        
+        #region Avatar Light ...........................................................................................
+        
+        private void UpdateAvatarLight()
+        {
+            if(EnvironmentManager.Instance == null || _target == null) return;
+
+            // Position: use avatar's position + offset rotated by current camera rotation
+            Vector3 offsetDirection = _targetRotation * EnvironmentManager.Instance.AvatarLightOffset.normalized;
+            Vector3 lightPos = _target.position + offsetDirection * EnvironmentManager.Instance.AvatarLightDistance;
+
+            EnvironmentManager.Instance.AvatarSpot.transform.position = lightPos;
+            EnvironmentManager.Instance.AvatarSpot.transform.rotation = _targetRotation; 
+        }
+
+        
+        #endregion
+
+        #region Event Handlers .........................................................................................
+
+        #endregion
+
+        #endregion
+        
+        
     }
 }

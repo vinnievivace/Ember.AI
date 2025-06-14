@@ -16,15 +16,6 @@ namespace EmberAI.Avatars
         [Tooltip("Attempt to assign the correct Config based on the path / url")]
         public string nameHint;
             
-        [FormerlySerializedAs("leftFootstep")] [BoxGroup("Audio")]
-        public AudioClip footstep;
-
-        [FormerlySerializedAs("rightFootstep")] [BoxGroup("Audio")]
-        public AudioClip footstepAlt;
-
-        [BoxGroup("Audio")]
-        public AudioClip landJump;
-
         [BoxGroup("Animation")]
         public AnimationClip idle, walk, run, jumpStart, jumpLand, jumpLandWalk, jumpLandRun, crouch, inAir;
         

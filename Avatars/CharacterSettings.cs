@@ -57,5 +57,25 @@ namespace EmberAI.Avatars
         
         [BoxGroup("Gravity"), Tooltip("Downward velocity when grounded to keep snapped.")] 
         public float groundStick = 2f;
+        
+        [BoxGroup("Foot IK"), Tooltip("Maximum distance to raycast downward from each foot.")]
+        public float raycastDistance = 1.5f;
+
+        [BoxGroup("Foot IK"), Tooltip("How high above the ground to place the foot.")]
+        public float footHeightOffset = 0.1f;
+
+        [BoxGroup("Foot IK"), Tooltip("Overall weight for foot IK.")]
+        [Range(0f, 1f)]
+        public float ikWeight = 1f;
+
+        [BoxGroup("Foot IK"), Tooltip("Weight for knee hint positioning.")]
+        [Range(0f, 1f)]
+        public float kneeHintWeight = 1f;
+
+        [BoxGroup("Foot IK"), Tooltip("Local offset forward from the knee for hinting bend direction.")]
+        public float kneeHintForward = 0.3f;
+
+        [BoxGroup("Foot IK"), Tooltip("Local offset outward from the thigh for hinting bend direction.")]
+        public float kneeHintOutward = 0.1f;
     }
 }

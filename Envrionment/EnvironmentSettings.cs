@@ -42,6 +42,9 @@ namespace EmberAI.Envrionment
         
         [BoxGroup("Avatar Light")]
         public float avatarLightWidth = 10f, avatarLightHeight = 10, avatarLightDistance = 0; 
+        
+        [BoxGroup("Audio"), SerializeField]
+        public AudioClip footStep, footStepAlt, landJump;
 
         #endregion
 

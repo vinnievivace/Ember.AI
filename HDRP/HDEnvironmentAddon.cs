@@ -65,7 +65,7 @@ namespace EmberAI.HDRP
         {
             base.OnUpdate();
 
-            _sunLightData.shadowDimmer = EnvironmentManager.Instance.ShadowStrength;
+            _sunLightData.shadowDimmer = EnvironmentManager.Settings.shadowStrength;
         }
 
         #endregion

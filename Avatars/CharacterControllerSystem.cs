@@ -1,4 +1,3 @@
-using System;
 using EmberAI.Attributes;
 using EmberAI.Core;
 using EmberAI.Envrionment;
@@ -44,14 +43,11 @@ namespace EmberAI.Avatars
         // Buffer for jump input so it isn't lost mid‐air
         private bool _jumpRequestedCached = false;
 
-        [BoxGroup("Settings"), SerializeField]
-        private CharacterSettings settings;
+        [BoxGroup("Settings")]
+        public CharacterSettings settings;
         
         [BoxGroup("Audio"), SerializeField]
         private float animationEventVolume = 1f;
-
-        [BoxGroup("Audio"), SerializeField]
-        private AudioClip footStep, footStepAlt, landJump;
 
         [BoxGroup("Look At"), SerializeField]
         public bool lookAtEnabled = true;
@@ -59,11 +55,14 @@ namespace EmberAI.Avatars
         [BoxGroup("Look At"), SerializeField]
         private Transform lookAtTarget;
         
-        [BoxGroup("Loo At")]
+        [BoxGroup("Look At")]
         public Vector3 lookAtOffset = new Vector3(0f, 0f, 0f);
         
         [BoxGroup("Look At"), SerializeField]
         private float lookAtSpeed = 8, lookAtHorizontalClamp = 60, lookAtVerticalClamp = 50;
+
+        [BoxGroup("Components"), ReadOnly, SerializeField]
+        private AvatarFootController footController;
         
         [BoxGroup("Components")]
         public BaseCharacterInput characterInput;
@@ -110,8 +109,9 @@ namespace EmberAI.Avatars
             controller     = this.GetOrAddComponent<CharacterController>();
             avatarAnimator = this.GetOrAddComponent<AvatarAnimator>();
             audioSource    = this.GetOrAddComponent<AudioSource>();
+            footController = this.GetOrAddComponent<AvatarFootController>();
             characterInput = GetComponent<BaseCharacterInput>();
-
+            
             // Default capsule
             controller.center = new Vector3(0f, 0.5f, 0f);
             controller.height = 1f;
@@ -221,10 +221,6 @@ namespace EmberAI.Avatars
             if (config == null) return;
             
             avatarAnimator.InitializeAvatar(avatar, config);
-
-            if (config.landJump    != null) landJump    = config.landJump;
-            if (config.footstep    != null) footStep    = config.footstep;
-            if (config.footstepAlt != null) footStepAlt = config.footstepAlt;
 
             headTransform = transform.FindChildTransform(config.GetBoneTarget(AvatarBoneID.Head));
             _headIKRotation = Quaternion.identity;
@@ -411,7 +407,7 @@ namespace EmberAI.Avatars
                     origin, 
                     Vector3.down, 
                     out RaycastHit hit, 
-                    controller.height * 0.5f + 0.1f, EnvironmentManager.Instance.GroundLayer))
+                    controller.height * 0.5f + 0.1f, EnvironmentManager.Settings.GroundLayer))
             {
                 return hit.normal;
             }
@@ -425,6 +421,9 @@ namespace EmberAI.Avatars
         [UsedImplicitly]
         private void OnFootstep(AnimationEvent e)
         {
+            AudioClip footStep = EnvironmentManager.Settings.footStep;
+            AudioClip footStepAlt = EnvironmentManager.Settings.footStepAlt;
+            
             if (footStep == null && footStepAlt == null) return;
             
             AudioClip clip = (footStep != null && footStepAlt != null) ? (Random.value < 0.5f ? footStep : footStepAlt) : (footStep ?? footStepAlt);
@@ -435,6 +434,8 @@ namespace EmberAI.Avatars
         [UsedImplicitly]
         private void OnLand(AnimationEvent e)
         {
+            AudioClip landJump = EnvironmentManager.Settings.landJump;
+            
             if (landJump == null) return;
             
             if (e.animatorClipInfo.weight > 0.5f)

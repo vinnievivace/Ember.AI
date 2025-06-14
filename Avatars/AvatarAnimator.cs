@@ -111,8 +111,8 @@ namespace EmberAI.Avatars
         {
             if (!active) return;
             
-            ApplyFootIK(AvatarIKGoal.LeftFoot, AvatarIKHint.LeftKnee);
-            ApplyFootIK(AvatarIKGoal.RightFoot, AvatarIKHint.RightKnee);
+            //ApplyFootIK(AvatarIKGoal.LeftFoot, AvatarIKHint.LeftKnee);
+            //ApplyFootIK(AvatarIKGoal.RightFoot, AvatarIKHint.RightKnee);
         }
 
         #endregion
@@ -199,93 +199,7 @@ namespace EmberAI.Avatars
 
         #region FOOT IK ................................................................................................
 
-        private void ApplyFootIK(AvatarIKGoal foot, AvatarIKHint kneeHint)
-        {
-            animator.SetIKPositionWeight(foot, ikWeight);
-            animator.SetIKRotationWeight(foot, ikWeight);
-            animator.SetIKHintPositionWeight(kneeHint, kneeHintWeight);
-
-            Vector3 footPos = animator.GetIKPosition(foot);
-            Quaternion footRot = animator.GetIKRotation(foot);
-
-            if (Physics.Raycast(footPos + Vector3.up * raycastDistance, Vector3.down,
-                    out RaycastHit hit, raycastDistance * 2f, EnvironmentManager.Instance.GroundLayer))
-            {
-                Vector3 targetPos = hit.point + Vector3.up * footHeightOffset;
-                Quaternion targetRot =
-                    Quaternion.LookRotation(Vector3.ProjectOnPlane(transform.forward, hit.normal), hit.normal);
-
-                animator.SetIKPosition(foot, Vector3.Lerp(footPos, targetPos, ikWeight));
-                animator.SetIKRotation(foot, Quaternion.Slerp(footRot, targetRot, ikWeight));
-
-                Transform thigh = animator.GetBoneTransform(
-                    foot == AvatarIKGoal.LeftFoot ? HumanBodyBones.LeftUpperLeg : HumanBodyBones.RightUpperLeg);
-
-                Vector3 hintDirection = transform.forward * kneeHintForward +
-                                         transform.right *
-                                         (foot == AvatarIKGoal.LeftFoot ? -kneeHintOutward : kneeHintOutward);
-
-                Vector3 hintPos = thigh.position + hintDirection;
-                animator.SetIKHintPosition(kneeHint, hintPos);
-            }
-            else
-            {
-                animator.SetIKPosition(foot, footPos);
-                animator.SetIKRotation(foot, footRot);
-            }
-        }
-
-        #endregion
-
-        #region ROTATION OFFSETS .......................................................................................
-
-        // Disabled for now, was not working as well as required, decided to stop burning time for now!
         
-        /*private void ApplyRotationOffsets()
-        {
-            if (avatarConfig == null || avatarConfig.BoneRotations == null || avatarConfig.BoneRotations.Count == 0) return;
-
-            // For each configured bone, set localRotation = baseRotation × offsetQuat
-            foreach (BoneRotationConfig config in avatarConfig.BoneRotations)
-            {
-                string boneName = avatarConfig.GetBoneTarget(config.BoneID);
-                if (string.IsNullOrEmpty(boneName))
-                    continue;
-
-                Transform bone = transform.FindChildTransform(boneName);
-                
-                if (bone == null) continue;
-
-                if (boneBaseRotations.TryGetValue(boneName, out Quaternion baseRot))
-                {
-                    bone.localRotation = baseRot * Quaternion.Euler(config.offset);
-                }
-                else
-                {
-                    Debug.LogError("base rotations not yet set, not safe to apply rotations!");
-                }
-            }
-        }
-
-        private void CacheBoneBaseRotations()
-        {
-            boneBaseRotations.Clear();
-            if (avatarConfig == null || avatarConfig.BoneRotations == null) 
-                return;
-
-            foreach (BoneRotationConfig config in avatarConfig.BoneRotations)
-            {
-                string boneName = avatarConfig.GetBoneTarget(config.BoneID);
-                if (string.IsNullOrEmpty(boneName)) 
-                    continue;
-
-                Transform bone = transform.FindChildTransform(boneName);
-                if (bone == null) 
-                    continue;
-
-                boneBaseRotations[boneName] = bone.localRotation;
-            }
-        }*/
 
         #endregion
 

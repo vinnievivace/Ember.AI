@@ -20,7 +20,7 @@ namespace EmberAI.Envrionment
         #region FIELDS /////////////////////////////////////////////////////////////////////////////////////////////////
 
         [BoxGroup("Settings"), SerializeField, OnValueChanged(nameof(DoApplySettings))]
-        private EnvironmentSettings Settings;
+        private EnvironmentSettings settings;
 
         [BoxGroup("Lighting"), SerializeField, OnValueChanged(nameof(DoApplySettings))] 
         private Light sun, avatarSpot;
@@ -29,18 +29,12 @@ namespace EmberAI.Envrionment
 
         #region PROPERTIES /////////////////////////////////////////////////////////////////////////////////////////////           
 
-        public LayerMask GroundLayer => Settings.GroundLayer;
+        public static EnvironmentSettings Settings => Instance.settings;
         
         public Light Sun => sun;
         
-        public float ShadowStrength => Settings.shadowStrength;
-        
         public Light AvatarSpot => avatarSpot;
 
-        public Vector3 AvatarLightOffset => Settings.avatarLightOffset;
-        
-        public float AvatarLightDistance => Settings.avatarLightDistance;
-        
         #endregion
 
         #region METHODS ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +59,7 @@ namespace EmberAI.Envrionment
 
         private void DoApplySettings()
         {
-            ApplySettings(Settings);
+            ApplySettings(settings);
         }
 
         #endregion
@@ -87,7 +81,7 @@ namespace EmberAI.Envrionment
         {
             base.OnUpdate();
             
-            ApplySettings(Settings);
+            ApplySettings(settings);
         }
 
         #endregion
@@ -96,33 +90,33 @@ namespace EmberAI.Envrionment
 
         public void ApplySettings(EnvironmentSettings settings)
         {
-            Settings = settings;
+            this.settings = settings;
             
-            if(Settings == null) return;
+            if(this.settings == null) return;
 
             if (sun != null)
             {
-                sun.intensity = Settings.sunIntensity;
+                sun.intensity = this.settings.sunIntensity;
                 sun.useColorTemperature = true;
-                sun.colorTemperature = Settings.sunTemperature;
+                sun.colorTemperature = this.settings.sunTemperature;
             }
 
             if (avatarSpot != null)
             {
-                avatarSpot.intensity = Settings.avatarLightIntensity;
-                avatarSpot.type = Settings.avatarLightType;
-                avatarSpot.areaSize = new Vector2(Settings.avatarLightWidth, Settings.avatarLightHeight);
+                avatarSpot.intensity = this.settings.avatarLightIntensity;
+                avatarSpot.type = this.settings.avatarLightType;
+                avatarSpot.areaSize = new Vector2(this.settings.avatarLightWidth, this.settings.avatarLightHeight);
                 
-                avatarSpot.renderingLayerMask = Settings.AvatarLightLayer;
+                avatarSpot.renderingLayerMask = this.settings.AvatarLightLayer;
                 avatarSpot.useColorTemperature = true;
-                avatarSpot.colorTemperature = Settings.avatarLightTemperature;
+                avatarSpot.colorTemperature = this.settings.avatarLightTemperature;
                 
                 if(ThirdPersonCamera.Instance == null || ThirdPersonCamera.Instance.Target == null) return;
                 
                 // rotate the avatar spot to always face the avatar (using the Camera Target Rotation) and offset as per settings.
                 Quaternion targetRotation = ThirdPersonCamera.Instance.TargetRotation;
                 
-                TransformUtil.PositionRelativeTo(ThirdPersonCamera.Instance.Target, AvatarSpot, targetRotation, AvatarLightOffset, AvatarLightDistance);
+                TransformUtil.PositionRelativeTo(ThirdPersonCamera.Instance.Target, AvatarSpot, targetRotation, settings.avatarLightOffset, settings.avatarLightDistance);
             }
         }
         
@@ -137,7 +131,7 @@ namespace EmberAI.Envrionment
         {
             foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>())
             {
-                renderer.renderingLayerMask = Settings.AvatarLightLayer;
+                renderer.renderingLayerMask = settings.AvatarLightLayer;
             }
         }
 
@@ -149,7 +143,7 @@ namespace EmberAI.Envrionment
         /// </returns>
         public int GetGroundLayerIndex()
         {
-            return Mathf.RoundToInt(Mathf.Log(Settings.GroundLayer.value, 2));
+            return Mathf.RoundToInt(Mathf.Log(settings.GroundLayer.value, 2));
         }
 
         #endregion

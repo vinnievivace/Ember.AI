@@ -58,6 +58,15 @@ namespace EmberAI.Avatars
         [BoxGroup("Gravity"), Tooltip("Downward velocity when grounded to keep snapped.")] 
         public float groundStick = 2f;
         
+        [BoxGroup("Gravity"), Tooltip("Tolerance (time in seconds both feet are not grounded) used to determine if grounded")]
+        public float IsGroundedTolerance = 0.25f;
+
+        [BoxGroup("Foot IK")] 
+        public bool footIKEnabled = true;
+        
+        [BoxGroup("Foot IK")] 
+        public float footContactColliderYOffset = 0.01f, footContactColliderRadius = 0f;
+        
         [BoxGroup("Foot IK"), Tooltip("Maximum distance to raycast downward from each foot.")]
         public float raycastDistance = 1.5f;
 
@@ -77,5 +86,15 @@ namespace EmberAI.Avatars
 
         [BoxGroup("Foot IK"), Tooltip("Local offset outward from the thigh for hinting bend direction.")]
         public float kneeHintOutward = 0.1f;
+        
+        [BoxGroup("Foot IK")]
+        public bool enablePelvisAdjustment = true;
+
+        [BoxGroup("Foot IK"), Tooltip("Maximum vertical pelvis offset when feet are at different heights.")]
+        public float pelvisAdjustmentAmount = 0.08f;
+
+        [BoxGroup("Foot IK"), Tooltip("Smoothing speed for pelvis adjustment.")]
+        public float pelvisAdjustmentSpeed = 8f;
+
     }
 }

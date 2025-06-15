@@ -221,6 +221,7 @@ namespace EmberAI.Avatars
             if (config == null) return;
             
             avatarAnimator.InitializeAvatar(avatar, config);
+            footController.Initialize();
 
             headTransform = transform.FindChildTransform(config.GetBoneTarget(AvatarBoneID.Head));
             _headIKRotation = Quaternion.identity;
@@ -365,15 +366,16 @@ namespace EmberAI.Avatars
             Vector3 velocity = horizontal + Vector3.up * _verticalVelocity;
             controller.Move(velocity * delta);
 
-            AvatarAnimatorState state = new AvatarAnimatorState();
-            
-            state.maxSpeed        = _decelerating ? _stopRawTarget : rawTarget;
-            state.isGrounded      = controller.isGrounded;
-            state.jump            = jumpRequestedThisFrame;
-            state.crouch          = isCrouching && state.isGrounded;
-            state.dance           = characterInput.IsDancing();
-            state.currentSpeed    = _currentSpeed;
-            state.verticalVelocity = _verticalVelocity;
+            AvatarAnimatorState state = new AvatarAnimatorState
+            {
+                maxSpeed = _decelerating ? _stopRawTarget : rawTarget,
+                isGrounded = footController.IsGrounded,
+                jump = jumpRequestedThisFrame,
+                crouch = isCrouching && footController.IsGrounded,
+                dance = characterInput.IsDancing(),
+                currentSpeed = _currentSpeed,
+                verticalVelocity = _verticalVelocity
+            };
 
             avatarAnimator.UpdateAnimatorState(state);
 

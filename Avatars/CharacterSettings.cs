@@ -61,33 +61,21 @@ namespace EmberAI.Avatars
         [BoxGroup("Gravity"), Tooltip("Tolerance (time in seconds both feet are not grounded) used to determine if grounded")]
         public float IsGroundedTolerance = 0.25f;
 
-        [BoxGroup("Foot IK")] 
+        // --- FOOT IK SETTINGS ---
+        [BoxGroup("Foot IK"), Tooltip("Enable or disable foot IK.")]
         public bool footIKEnabled = true;
-        
-        [BoxGroup("Foot IK")] 
-        public float footContactColliderYOffset = 0.01f, footContactColliderRadius = 0f;
-        
+
         [BoxGroup("Foot IK"), Tooltip("Maximum distance to raycast downward from each foot.")]
-        public float raycastDistance = 1.5f;
+        public float raycastDistance = 0.5f;
 
         [BoxGroup("Foot IK"), Tooltip("How high above the ground to place the foot.")]
-        public float footHeightOffset = 0.1f;
+        public float footHeightOffset = 0.02f;
 
         [BoxGroup("Foot IK"), Tooltip("Overall weight for foot IK.")]
         [Range(0f, 1f)]
         public float ikWeight = 1f;
 
-        [BoxGroup("Foot IK"), Tooltip("Weight for knee hint positioning.")]
-        [Range(0f, 1f)]
-        public float kneeHintWeight = 1f;
-
-        [BoxGroup("Foot IK"), Tooltip("Local offset forward from the knee for hinting bend direction.")]
-        public float kneeHintForward = 0.3f;
-
-        [BoxGroup("Foot IK"), Tooltip("Local offset outward from the thigh for hinting bend direction.")]
-        public float kneeHintOutward = 0.1f;
-        
-        [BoxGroup("Foot IK")]
+        [BoxGroup("Foot IK"), Tooltip("Enable pelvis adjustment for uneven ground.")]
         public bool enablePelvisAdjustment = true;
 
         [BoxGroup("Foot IK"), Tooltip("Maximum vertical pelvis offset when feet are at different heights.")]
@@ -96,5 +84,35 @@ namespace EmberAI.Avatars
         [BoxGroup("Foot IK"), Tooltip("Smoothing speed for pelvis adjustment.")]
         public float pelvisAdjustmentSpeed = 8f;
 
+        public void SetDefaultValues()
+        {
+            // Movement
+            walkSpeed = 2f;
+            runSpeed = 6f;
+            crouchSpeed = 1.5f;
+            rotationSpeed = 720f;
+            accelerationSpeed = 15f;
+            decelerationTime = 0.5f;
+            // Jumping
+            canJump = true;
+            jumpForce = 10f;
+            // Crouch
+            canCrouch = true;
+            // Animation
+            useRootMotion = false;
+            idleAnimationSpeed = 1f;
+            // Gravity
+            gravity = -10f;
+            groundStick = 2f;
+            IsGroundedTolerance = 0.5f;
+            // Foot IK
+            footIKEnabled = true;
+            raycastDistance = 0.5f;
+            footHeightOffset = 0.02f;
+            ikWeight = 1f;
+            enablePelvisAdjustment = true;
+            pelvisAdjustmentAmount = 0.08f;
+            pelvisAdjustmentSpeed = 8f;
+        }
     }
 }

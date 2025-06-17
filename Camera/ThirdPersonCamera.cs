@@ -112,6 +112,8 @@ namespace EmberAI.Cameras
         protected override void OnAwake()
         {
             base.OnAwake();
+            
+            if(Camera == null) Camera = Camera.main;
 
             DistanceTarget      = Settings.defaultDistance;
             _targetZoomDistance = Settings.defaultDistance;

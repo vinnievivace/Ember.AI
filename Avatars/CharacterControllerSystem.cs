@@ -221,7 +221,7 @@ namespace EmberAI.Avatars
             if (config == null) return;
             
             avatarAnimator.InitializeAvatar(avatar, config);
-            footController.Initialize();
+            footController.Initialize(settings);
 
             headTransform = transform.FindChildTransform(config.GetBoneTarget(AvatarBoneID.Head));
             _headIKRotation = Quaternion.identity;

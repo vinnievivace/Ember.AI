@@ -58,61 +58,28 @@ namespace EmberAI.Avatars
         [BoxGroup("Gravity"), Tooltip("Downward velocity when grounded to keep snapped.")] 
         public float groundStick = 2f;
         
-        [BoxGroup("Gravity"), Tooltip("Tolerance (time in seconds both feet are not grounded) used to determine if grounded")]
-        public float IsGroundedTolerance = 0.25f;
+        [BoxGroup("Foot IK")]
+        [Tooltip("How high above the root (body) the foot can be and still be considered grounded. Increase if idle feet float above ground. Typical: 0.02–0.05.")]
+        public float groundedTolerance = 0.03f;
 
-        // --- FOOT IK SETTINGS ---
-        [BoxGroup("Foot IK"), Tooltip("Enable or disable foot IK.")]
-        public bool footIKEnabled = true;
+        [BoxGroup("Foot IK")]
+        [Tooltip("Enable look-ahead for steps/bumps. If true, the system anticipates upcoming changes in ground height for more natural foot placement.")]
+        public bool enableForwardStepDetection = true;
 
-        [BoxGroup("Foot IK"), Tooltip("Maximum distance to raycast downward from each foot.")]
-        public float raycastDistance = 0.5f;
+        [BoxGroup("Foot IK")]
+        [Tooltip("How far ahead (in meters) to look for steps/bumps when forward step detection is enabled. Increase for bigger steps. Typical: 0.2–0.4.")]
+        public float forwardStepDetectionRange = 0.25f;
 
-        [BoxGroup("Foot IK"), Tooltip("How high above the ground to place the foot.")]
-        public float footHeightOffset = 0.02f;
+        [BoxGroup("Foot IK")]
+        [Tooltip("How far down (in meters) to search for ground below each foot. Increase for big drops/steps. Typical: 0.4–0.6.")]
+        public float footRaycastDistance = 0.5f;
 
-        [BoxGroup("Foot IK"), Tooltip("Overall weight for foot IK.")]
-        [Range(0f, 1f)]
-        public float ikWeight = 1f;
+        [BoxGroup("Foot IK")]
+        [Tooltip("Fine-tune body (pelvis) height above ground after foot IK. Use small values (e.g., -0.05 to 0.05) to correct floating/sinking. Usually 0.")]
+        public float bodyHeightOffset = 0f;
 
-        [BoxGroup("Foot IK"), Tooltip("Enable pelvis adjustment for uneven ground.")]
-        public bool enablePelvisAdjustment = true;
-
-        [BoxGroup("Foot IK"), Tooltip("Maximum vertical pelvis offset when feet are at different heights.")]
-        public float pelvisAdjustmentAmount = 0.08f;
-
-        [BoxGroup("Foot IK"), Tooltip("Smoothing speed for pelvis adjustment.")]
-        public float pelvisAdjustmentSpeed = 8f;
-
-        public void SetDefaultValues()
-        {
-            // Movement
-            walkSpeed = 2f;
-            runSpeed = 6f;
-            crouchSpeed = 1.5f;
-            rotationSpeed = 720f;
-            accelerationSpeed = 15f;
-            decelerationTime = 0.5f;
-            // Jumping
-            canJump = true;
-            jumpForce = 10f;
-            // Crouch
-            canCrouch = true;
-            // Animation
-            useRootMotion = false;
-            idleAnimationSpeed = 1f;
-            // Gravity
-            gravity = -10f;
-            groundStick = 2f;
-            IsGroundedTolerance = 0.5f;
-            // Foot IK
-            footIKEnabled = true;
-            raycastDistance = 0.5f;
-            footHeightOffset = 0.02f;
-            ikWeight = 1f;
-            enablePelvisAdjustment = true;
-            pelvisAdjustmentAmount = 0.08f;
-            pelvisAdjustmentSpeed = 8f;
-        }
+        [BoxGroup("Foot IK")]
+        [Tooltip("Smoothing for all transitions (foot placement, body offset, etc). 0 = instant, 1 = very slow. Typical: 0.3–0.7.")]
+        public float ikSmoothing = 0.5f;
     }
 }

@@ -77,6 +77,13 @@ namespace EmberAI.Envrionment
 
         #region MonoBehaviours .........................................................................................
 
+        protected override void OnAwake()
+        {
+            base.OnAwake();
+            
+            if(settings == null) throw new System.Exception("EnvironmentSettings is missing");
+        }
+
         protected override void OnUpdate()
         {
             base.OnUpdate();
